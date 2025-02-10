@@ -2,18 +2,14 @@
  * @type {import('vite').UserConfig}
  */
 export default {
-  // Configuration pour spécifier la base de l'URL pour GitHub Pages
-  base: '/tree-js/',
-
+  base: '/tree-js/',  // Répertoire de base pour GitHub Pages, tu peux l'ajuster si nécessaire
   build: {
-    outDir: './dist',  // Répertoire de sortie après la compilation
-    sourcemap: true,  // Génère des fichiers de source map pour le débogage
+    outDir: './dist',  // Dossier de sortie pour les fichiers compilés
+    sourcemap: true,  // Génère un fichier de sourcemaps pour le débogage
   },
-
-  publicDir: './public',  // Répertoire public pour les fichiers statiques
+  publicDir: './public',  // Répertoire pour les fichiers statiques
 
   server: {
-    port: 8080,  // Le port du serveur de développement
-    open: true,  // Ouvre automatiquement le navigateur lorsque le serveur démarre
+    port: 8080,  // Port du serveur de développement et du WebSocket
   },
-}
+};

@@ -1,56 +1,50 @@
-// Importation du module osc.js (assure-toi que ce module est installé via npm ou inclus dans ton projet)
-import osc from "osc";
-
-// Log initial pour vérifier que ton script se charge correctement
+// Log de démarrage pour vérifier que le script fonctionne
 console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 
-// WebSocket Port et Connexion
+// Configuration WebSocket
 let webSocketConnected = false;
 let socketPort = 8080;
 
-// Création de l'objet WebSocket
-const oscSocket = new osc.WebSocketPort({
-  url: "ws://127.0.0.1:8080/tree-js/",  // URL de ton WebSocket
-  metadata: true,
-});
+// Remarque : remplace cette URL par l'URL de ton serveur WebSocket si nécessaire
+const oscSocket = new WebSocket("ws://127.0.0.1:8080/tree-js/");
 
-// Log pour vérifier que le WebSocket a été initialisé
-console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+console.log(" BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
 
-// Événement lorsque la connexion WebSocket est prête
-oscSocket.on("ready", function (msg) {
-  console.log("WebSocket ouvert sur le port " + socketPort); 
+// Lorsque la connexion WebSocket est ouverte
+oscSocket.onopen = function () {
+  console.log("WebSocket ouvert sur le port " + socketPort);  // Vérifie si la connexion WebSocket a réussi
   webSocketConnected = true;
-  console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-});
+  console.log("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC");
+};
 
-// Gestion des erreurs de connexion WebSocket
-oscSocket.on("error", function (err) {
-  console.log("Erreur WebSocket:", err);  // Affiche les erreurs de connexion
-  console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-});
+// Lorsque la connexion WebSocket échoue
+oscSocket.onerror = function (err) {
+  console.log("Erreur WebSocket:", err);  // Affiche l'erreur si la connexion échoue
+  console.log("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
+};
 
-// Réception des messages via WebSocket
-oscSocket.on("message", function (msg) {
-  console.log("Message reçu: ", msg);
-  console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-});
+// Lorsque le serveur WebSocket envoie un message
+oscSocket.onmessage = function (msg) {
+  console.log("Message reçu depuis le serveur WebSocket:", msg.data);
+  console.log("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+};
 
-// Fermeture de la connexion WebSocket
-oscSocket.on("close", function (msg) {
+// Lorsque la connexion WebSocket se ferme
+oscSocket.onclose = function () {
   console.log("WebSocket fermé");
   webSocketConnected = false;
-  console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+  console.log("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+};
+
+// Événement avant la fermeture de la fenêtre (avant que la page ne soit fermée)
+window.addEventListener("beforeunload", function (event) {
+  oscSocket.close();  // Ferme la connexion WebSocket lorsque la fenêtre est fermée
+  console.log("WebSocket fermé avant la fermeture de la fenêtre");
 });
 
-// Gestion de l'événement avant de quitter la fenêtre
-window.addEventListener("beforeunload", (event) => {
-  oscSocket.close();
-  console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-});
-
-// Ouverture de la connexion WebSocket au chargement de la fenêtre
-window.addEventListener("load", (event) => {
-  oscSocket.open();
-  console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+// Assurer que WebSocket est ouvert une fois que la page est complètement chargée
+window.addEventListener("load", function (event) {
+  console.log("Page chargée, connexion WebSocket ouverte...");
+  // Si nécessaire, tu peux aussi envoyer un message initial ici, exemple :
+  // oscSocket.send("Message de test");
 });
