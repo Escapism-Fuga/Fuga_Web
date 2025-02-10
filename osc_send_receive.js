@@ -4,47 +4,46 @@ console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 // Configuration WebSocket
 let webSocketConnected = false;
 let socketPort = 8080;
+let oscSocket = new WebSocket(`ws://localhost:${socketPort}/tree-js`);
 
-// Remarque : remplace cette URL par l'URL de ton serveur WebSocket si nécessaire
-const oscSocket = new WebSocket("ws://127.0.0.1:8080/tree-js/");
-
-console.log(" BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
-
-// Lorsque la connexion WebSocket est ouverte
 oscSocket.onopen = function () {
-  console.log("WebSocket ouvert sur le port " + socketPort);  // Vérifie si la connexion WebSocket a réussi
+  console.log("WebSocket ouvert sur le port " + socketPort);
   webSocketConnected = true;
-  console.log("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC");
+
 };
 
-// Lorsque la connexion WebSocket échoue
+
+
 oscSocket.onerror = function (err) {
-  console.log("Erreur WebSocket:", err);  // Affiche l'erreur si la connexion échoue
-  console.log("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
+  console.error("Erreur WebSocket:", err);
+  console.log("La connexion WebSocket a échoué. Vérifie si le serveur WebSocket est bien en ligne.");
 };
 
-// Lorsque le serveur WebSocket envoie un message
-oscSocket.onmessage = function (msg) {
-  console.log("Message reçu depuis le serveur WebSocket:", msg.data);
-  console.log("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+oscSocket.onmessage = function (event) {
+  const msg = JSON.parse(event.data);  // Suppose que le message est en format JSON
+  console.log("Message reçu:", msg);  // Affiche tout le message reçu
+  let address = msg.address;
+  let firstArgumentValue = msg.args[0].value;
+
+  if (address.startsWith("/Slider/1")) {
+    console.log("Chiffre " + firstArgumentValue)
+  }
 };
 
-// Lorsque la connexion WebSocket se ferme
+
+
 oscSocket.onclose = function () {
   console.log("WebSocket fermé");
   webSocketConnected = false;
-  console.log("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 };
 
-// Événement avant la fermeture de la fenêtre (avant que la page ne soit fermée)
-window.addEventListener("beforeunload", function (event) {
-  oscSocket.close();  // Ferme la connexion WebSocket lorsque la fenêtre est fermée
-  console.log("WebSocket fermé avant la fermeture de la fenêtre");
+window.addEventListener("beforeunload", function () {
+  if (webSocketConnected) {
+    oscSocket.close(); // Ferme la connexion WebSocket lorsque la fenêtre est fermée
+    console.log("WebSocket fermé avant la fermeture de la fenêtre");
+  } else {
+    console.log("WebSocket déjà fermé avant la fermeture de la fenêtre");
+  }
 });
 
-// Assurer que WebSocket est ouvert une fois que la page est complètement chargée
-window.addEventListener("load", function (event) {
-  console.log("Page chargée, connexion WebSocket ouverte...");
-  // Si nécessaire, tu peux aussi envoyer un message initial ici, exemple :
-  // oscSocket.send("Message de test");
-});
+
