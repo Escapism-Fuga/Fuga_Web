@@ -4,57 +4,113 @@ console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 // Configuration WebSocket
 let webSocketConnected = false;
 let socketPort = 8080;
+console.log("🛠 Tentative de connexion WebSocket...");
+
 let oscSocket = new WebSocket(`ws://localhost:${socketPort}/tree-js`);
 
 oscSocket.onopen = function () {
-  console.log("WebSocket ouvert sur le port " + socketPort);
-  webSocketConnected = true;
+  console.log("✅ WebSocket connecté sur le port " + socketPort);
 };
 
 oscSocket.onerror = function (err) {
-  console.error("Erreur WebSocket:", err);
-  console.log("La connexion WebSocket a échoué. Vérifie si le serveur WebSocket est bien en ligne.");
+  console.error("❌ Erreur WebSocket :", err);
 };
 
-oscSocket.onmessage = function(event) {
-  try {
-      // Vérifier si les données sont un Blob ou ArrayBuffer
-      let data = event.data;
+oscSocket.onclose = function () {
+  console.warn("⚠️ WebSocket fermé !");
+};
 
-      // Si les données sont un Blob, les lire en texte
-      if (data instanceof Blob) {
-          let reader = new FileReader();
-          reader.onload = function() {
-              // Une fois les données lues, extraire la chaîne JSON valide
-              let jsonString = reader.result.split("s ")[1];  // Extraire la chaîne après "s "
+let tree = new Tree();
 
-              // Tenter de parser le JSON
-              let jsonData = JSON.parse(jsonString);
+// Function pour mettre à jour l'arbre avec les valeurs OSC
+function mettreAJourArbre() {
+  // Exemple : Mettre à jour la hauteur de l'arbre avec la valeur reçue sur /Slider/1
+  let hauteurSlider = oscData["/Slider/1"] || 1; // Valeur par défaut si non définie
 
-              // Utiliser jsonData
-              console.log(jsonData);
-          };
-          reader.readAsText(data);  // Lire le Blob comme texte
-      } else {
-          // Si les données sont déjà une chaîne, effectuer le même traitement
-          let jsonString = data.split("s ")[1];  // Extraire la chaîne après "s "
+  // Mettre à jour la hauteur de l'arbre
+  tree.height = hauteurSlider;
 
-          // Tenter de parser le JSON
-          let jsonData = JSON.parse(jsonString);
+  // Exemple : Mettre à jour la couleur de l'arbre en fonction d'un autre slider (ex: /Slider/2)
+  let couleurSlider = oscData["/Slider/2"] || 0; // Valeur par défaut
+  tree.color = `rgb(${couleurSlider}, 0, 0)`; // Couleur rouge basée sur la valeur
 
-          // Utiliser jsonData
-          console.log(jsonData);
-      }
-  } catch (error) {
-      console.error("Erreur de parsing JSON: ", error);
+  // Exemple : Modifier la forme ou un autre paramètre de l'arbre
+  let formeSlider = oscData["/Slider/3"] || 1; // Valeur par défaut
+  tree.shape = formeSlider > 0.5 ? "conique" : "cylindrique"; // Choix de forme
+
+  console.log("Arbre mis à jour avec les nouvelles valeurs OSC :", tree);
+}
+
+// Appeler cette fonction à chaque fois qu'une nouvelle donnée OSC est reçue
+oscSocket.onmessage = function (event) {
+  if (event.data instanceof Blob) {
+    let reader = new FileReader();
+    reader.onload = function () {
+      let arrayBuffer = reader.result;
+      traiterMessage(arrayBuffer); // Traiter les messages OSC
+      mettreAJourArbre(); // Mettre à jour l'arbre avec les nouvelles données
+    };
+    reader.readAsArrayBuffer(event.data);
   }
 };
 
+let oscData = {}; // Stockage des valeurs OSC
 
-oscSocket.onclose = function () {
-  console.log("WebSocket fermé");
-  webSocketConnected = false;
-};
+function traiterMessage(buffer) {
+  let dataView = new DataView(buffer);
+  let index = 0;
+  let messageString = "";
+
+  // 🔥 Lire le nom du message OSC (ex: "/Slider/3")
+  while (index < buffer.byteLength) {
+    let byte = dataView.getUint8(index++);
+    if (byte === 0) break;
+    messageString += String.fromCharCode(byte);
+  }
+
+  while (index % 4 !== 0) index++; // 🔄 Sauter les null terminators
+
+  // 🔥 Lire les types de données OSC (ex: ",i")
+  let typeTag = "";
+  while (index < buffer.byteLength) {
+    let byte = dataView.getUint8(index++);
+    if (byte === 0) break;
+    typeTag += String.fromCharCode(byte);
+  }
+
+  while (index % 4 !== 0) index++; // 🔄 Sauter les null terminators
+
+  // 🔥 Lire les valeurs en fonction des types OSC
+  let values = [];
+  for (let i = 1; i < typeTag.length; i++) {
+    let type = typeTag[i];
+
+    if (type === "i") {
+      // int32
+      values.push(dataView.getInt32(index, false));
+      index += 4;
+    } else if (type === "f") {
+      // float32
+      values.push(dataView.getFloat32(index, false));
+      index += 4;
+    } else if (type === "s") {
+      // string
+      let str = "";
+      while (index < buffer.byteLength) {
+        let byte = dataView.getUint8(index++);
+        if (byte === 0) break;
+        str += String.fromCharCode(byte);
+      }
+      values.push(str);
+    } else {
+      console.warn("⚠️ Type OSC inconnu :", type);
+    }
+  }
+
+  // ✅ Stocker les données dans un objet pour une récupération plus facile
+  oscData[messageString] = values.length === 1 ? values[0] : values;
+  console.log("📊 Mise à jour des données OSC :", oscData);
+}
 
 window.addEventListener("beforeunload", function () {
   if (webSocketConnected) {
