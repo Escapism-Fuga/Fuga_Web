@@ -1,11 +1,75 @@
-// Log de démarrage pour vérifier que le script fonctionne
-console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+import * as THREE from "three";
+import { Tree } from "./src/tree"; // Assurez-vous d'importer la classe Tree correctement
+
+// Créer une scène Three.js
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+let renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+let treeParams = {
+  seed: 12345,
+  trunk: {
+    length: 5,
+    radius: 0.2, // Assurez-vous que radius est défini pour le tronc
+    color: 0x8b4513,
+    textured: true,
+    flatShading: true, // Si nécessaire
+    flare: 0.5, // Flare du tronc pour lui donner un effet d'élargissement
+  },
+  leaves: {
+    color: 0x228b22,
+    opacity: 1,
+    type: 0,
+    style: 0,
+  },
+  geometry: {
+    sections: 10,
+    segments: 8,
+    randomization: 0.1,
+    lengthVariance: 0.1,
+    radiusVariance: 0.05,
+  },
+  branch: {
+    levels: 4,
+    minChildren: 1,
+    maxChildren: 3,
+    taper: 0.2, // Réduit le diamètre des branches à mesure qu'elles se prolongent
+    sweepAngle: Math.PI / 6, // Angle entre les branches
+    radiusMultiplier: 0.8, // Multiplie le rayon des branches
+    lengthMultiplier: 0.7, // Multiplie la longueur des branches
+    flare: 0.3, // Flare pour les branches
+    radius: 0.1, // Rayon de base pour les branches
+  },
+  maturity: 1.0, // Maturité de l'arbre
+  sun: { direction: new THREE.Vector3(1, 1, 1), strength: 0.5 },
+};
+
+// Créer un arbre avec Tree.js
+let treeObject = new Tree(treeParams); // Crée un nouvel arbre
+scene.add(treeObject); // Ajoute l'arbre à la scène Three.js
+
+// Positionner la caméra
+camera.position.z = 10;
+
+// Fonction de rendu (animation)
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+// Lancer l'animation
+animate();
 
 // Configuration WebSocket
-let webSocketConnected = false;
 let socketPort = 8080;
 console.log("🛠 Tentative de connexion WebSocket...");
-
 let oscSocket = new WebSocket(`ws://localhost:${socketPort}/tree-js`);
 
 oscSocket.onopen = function () {
@@ -20,28 +84,30 @@ oscSocket.onclose = function () {
   console.warn("⚠️ WebSocket fermé !");
 };
 
-let tree = new Tree();
+let oscData = {}; // Stockage des valeurs OSC
 
-// Function pour mettre à jour l'arbre avec les valeurs OSC
+// Fonction pour mettre à jour l'arbre avec les données OSC
 function mettreAJourArbre() {
-  // Exemple : Mettre à jour la hauteur de l'arbre avec la valeur reçue sur /Slider/1
-  let hauteurSlider = oscData["/Slider/1"] || 1; // Valeur par défaut si non définie
+  let maturiteSlider = oscData["/Slider/1"] || 5; // Valeur par défaut pour la maturité
+  let couleurSlider = oscData["/Slider/2"] || 0; // Valeur pour la couleur
 
-  // Mettre à jour la hauteur de l'arbre
-  tree.height = hauteurSlider;
+  // Modifie la propriété 'maturity' de l'arbre Tree.js
+  treeObject.params.maturity = maturiteSlider / 10; // Ajuste la maturité
 
-  // Exemple : Mettre à jour la couleur de l'arbre en fonction d'un autre slider (ex: /Slider/2)
-  let couleurSlider = oscData["/Slider/2"] || 0; // Valeur par défaut
-  tree.color = `rgb(${couleurSlider}, 0, 0)`; // Couleur rouge basée sur la valeur
+  // Mettre à jour les matériaux de l'arbre pour simuler le vieillissement
+  treeObject.branchesMesh.material.color.setRGB(
+    couleurSlider / 255,
+    1 - couleurSlider / 255,
+    0
+  ); // Changer la couleur
 
-  // Exemple : Modifier la forme ou un autre paramètre de l'arbre
-  let formeSlider = oscData["/Slider/3"] || 1; // Valeur par défaut
-  tree.shape = formeSlider > 0.5 ? "conique" : "cylindrique"; // Choix de forme
+  // Mettre à jour la géométrie de l'arbre (par exemple, la hauteur du tronc)
+  treeObject.generate(); // Génére un nouvel arbre avec les paramètres mis à jour
 
-  console.log("Arbre mis à jour avec les nouvelles valeurs OSC :", tree);
+  console.log("Arbre mis à jour avec la maturité :", treeObject);
 }
 
-// Appeler cette fonction à chaque fois qu'une nouvelle donnée OSC est reçue
+// Appeler la fonction à chaque réception de nouvelles données OSC
 oscSocket.onmessage = function (event) {
   if (event.data instanceof Blob) {
     let reader = new FileReader();
@@ -54,23 +120,22 @@ oscSocket.onmessage = function (event) {
   }
 };
 
-let oscData = {}; // Stockage des valeurs OSC
-
+// Fonction pour traiter les messages OSC reçus
 function traiterMessage(buffer) {
   let dataView = new DataView(buffer);
   let index = 0;
   let messageString = "";
 
-  // 🔥 Lire le nom du message OSC (ex: "/Slider/3")
+  // Lire le nom du message OSC (ex: "/Slider/1")
   while (index < buffer.byteLength) {
     let byte = dataView.getUint8(index++);
     if (byte === 0) break;
     messageString += String.fromCharCode(byte);
   }
 
-  while (index % 4 !== 0) index++; // 🔄 Sauter les null terminators
+  while (index % 4 !== 0) index++; // Sauter les null terminators
 
-  // 🔥 Lire les types de données OSC (ex: ",i")
+  // Lire les types de données OSC (ex: ",i")
   let typeTag = "";
   while (index < buffer.byteLength) {
     let byte = dataView.getUint8(index++);
@@ -78,23 +143,20 @@ function traiterMessage(buffer) {
     typeTag += String.fromCharCode(byte);
   }
 
-  while (index % 4 !== 0) index++; // 🔄 Sauter les null terminators
+  while (index % 4 !== 0) index++; // Sauter les null terminators
 
-  // 🔥 Lire les valeurs en fonction des types OSC
+  // Lire les valeurs en fonction des types OSC
   let values = [];
   for (let i = 1; i < typeTag.length; i++) {
     let type = typeTag[i];
 
     if (type === "i") {
-      // int32
       values.push(dataView.getInt32(index, false));
       index += 4;
     } else if (type === "f") {
-      // float32
       values.push(dataView.getFloat32(index, false));
       index += 4;
     } else if (type === "s") {
-      // string
       let str = "";
       while (index < buffer.byteLength) {
         let byte = dataView.getUint8(index++);
@@ -107,16 +169,7 @@ function traiterMessage(buffer) {
     }
   }
 
-  // ✅ Stocker les données dans un objet pour une récupération plus facile
+  // Stocker les données dans un objet pour une récupération plus facile
   oscData[messageString] = values.length === 1 ? values[0] : values;
   console.log("📊 Mise à jour des données OSC :", oscData);
 }
-
-window.addEventListener("beforeunload", function () {
-  if (webSocketConnected) {
-    oscSocket.close(); // Ferme la connexion WebSocket lorsque la fenêtre est fermée
-    console.log("WebSocket fermé avant la fermeture de la fenêtre");
-  } else {
-    console.log("WebSocket déjà fermé avant la fermeture de la fenêtre");
-  }
-});
