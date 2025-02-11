@@ -271,7 +271,7 @@ animate();
 let webSocketConnected = false;
 let socketPort = 8080;
 
-oscSocket = new osc.WebSocketPort({
+let oscSocket = new osc.WebSocketPort({
   url: "ws://localhost:" + socketPort,
   metadata: true,
 });
@@ -284,10 +284,16 @@ oscSocket.on("ready", function (msg) {
 
 oscSocket.on("message", function (msg) {
   let address = msg.address;
-
+ 
   if (address.startsWith("/slider")) {
     let firstArgumentValue = msg.args[0].value;
-    console.log(firstArgumentValue);
+    console.log("Received slider value: " + firstArgumentValue);
+ 
+    // Update the trunk length
+    Tree.trunk.length = firstArgumentValue;
+ 
+    // Call function to update the tree, depending on your setup.
+    updateTree(); // Ensure this function exists to refresh your tree with the new length
   }
 });
 
@@ -307,3 +313,11 @@ window.addEventListener("beforeunload", (event) => {
 window.addEventListener("load", (event) => {
   oscSocket.open();
 });
+
+function updateTree() {
+  // Regenerate or update the tree based on the new parameters (like trunk length)
+  // Depending on how Tree is set up, you might need to re-render or adjust the geometry
+  tree.updateGeometry(Tree.trunk.length);
+
+  tree.generate();
+}
