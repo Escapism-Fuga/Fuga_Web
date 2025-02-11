@@ -332,16 +332,32 @@ oscSocket.on("ready", function (msg) {
 oscSocket.on("message", function (msg) {
   let address = msg.address;
 
-  if (address.startsWith("/slider")) {
+  if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
-    console.log("Received slider value: " + firstArgumentValue);
 
     // Update the trunk length dynamically based on OSC message
-    tree.params.trunk.length = firstArgumentValue;
+    treeParams.maturity = firstArgumentValue;
 
-    // Log the updated trunk length
-    console.log("Updated trunk length: " + tree.params.trunk.length);
+    // Call function to update the tree
+    updateTree();
+  }
+  if (address.startsWith("/sliderTwo")) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.branch.sweepAngle = firstArgumentValue;
+    updateTree();
+  }
+  if (address.startsWith("/sliderThree")) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.leaves.sizeVariance = firstArgumentValue;
+    updateTree();
+  }
+  if (address.startsWith("/bouton1")) {
+    console.log("reset");
 
+    let random = Math.random();
+    let randomSeed = random * 50000;
+    treeParams.maturity = 0;
+    treeParams.seed = randomSeed;
     // Call function to update the tree
     updateTree();
   }
