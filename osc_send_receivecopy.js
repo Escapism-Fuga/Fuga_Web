@@ -6,19 +6,17 @@ let webSocketConnected = false;
 let socketPort = 8080;
 
 oscSocket = new osc.WebSocketPort({
-  url: "ws://localhost:" + socketPort + "/tree-js/",
+  url: "ws://localhost:" + socketPort,
   metadata: true,
 });
 
 // ON WEBSOCKET OPEN AND READY
 oscSocket.on("ready", function (msg) {
-  console.log("WebSocket Opened on Port " + socketPort);
+  console.log("WebSocket Opened on Port " + socketPort + "/tree-js/");
   webSocketConnected = true;
 });
 
 oscSocket.on("message", function (msg) {
-  /************************Étape 1: 8Encoder*********************************/
-
   let address = msg.address;
 
   if (address.startsWith("/slider")) {
