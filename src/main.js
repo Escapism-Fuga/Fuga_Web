@@ -332,6 +332,17 @@ oscSocket.on("ready", function (msg) {
 oscSocket.on("message", function (msg) {
   let address = msg.address;
 
+  if (address.startsWith("/encoder")) {
+    let firstArgumentValue = msg.args[0].value;
+
+    // Update the trunk length dynamically based on OSC message
+    let encoder = firstArgumentValue / 100;
+    treeParams.maturity = Math.min(encoder, 1);
+
+    // Call function to update the tree
+    updateTree();
+  }
+  /*
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
 
@@ -341,6 +352,7 @@ oscSocket.on("message", function (msg) {
     // Call function to update the tree
     updateTree();
   }
+*/
   if (address.startsWith("/sliderTwo")) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.branch.sweepAngle = firstArgumentValue;
