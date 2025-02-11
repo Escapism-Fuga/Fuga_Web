@@ -1,11 +1,11 @@
-// Log de démarrage pour vérifier que le script fonctionne
-console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+import { Tree } from "./src/tree";
 
 // Configuration WebSocket
 let webSocketConnected = false;
 let socketPort = 8080;
 
-oscSocket = new osc.WebSocketPort({
+// Declare oscSocket properly
+let oscSocket = new osc.WebSocketPort({
   url: "ws://localhost:" + socketPort,
   metadata: true,
 });
