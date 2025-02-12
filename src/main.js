@@ -48,7 +48,7 @@ spotLight.shadow.camera.left = -30;
 spotLight.shadow.camera.right = 30;
 spotLight.shadow.camera.top = 30;
 spotLight.shadow.camera.bottom = -30;
-spotLight.shadow.mapSize = new THREE.Vector2(2048, 2048);
+spotLight.shadow.mapSize = new THREE.Vector2(1024, 1024);
 scene.add(spotLight);
 
 const camera = new THREE.PerspectiveCamera(
@@ -123,8 +123,8 @@ const treeParams = {
   },
 
   geometry: {
-    sections: 10, // Number of sections that make up this branch
-    segments: 12, // Number of faces around the circumference of the branch
+    sections: 6, // Number of sections that make up this branch
+    segments: 8, // Number of faces around the circumference of the branch
     lengthVariance: 0.1, // % variance in the nominal section length
     radiusVariance: 0.1, // % variance in the nominal section radius
     randomization: 0.1, // Randomization factor applied to vertices
@@ -329,19 +329,54 @@ oscSocket.on("ready", function (msg) {
   webSocketConnected = true;
 });
 
+let growth = 0; // Niveau de maturité brut (0-100)
+let targetGrowth = 0; // Cible vers laquelle on
+
 oscSocket.on("message", function (msg) {
   let address = msg.address;
+  let lerpSpeed = 0.05; // Plus lent si la différence est importante
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function updateTreeSmooth() {
+    // Limiter la vitesse de croissance de l'arbre
+    growth = lerp(growth, targetGrowth, lerpSpeed);
+
+    // Appliquer la maturité à la génération de l'arbre
+    treeParams.maturity = Math.min(1, Math.max(0, growth));
+
+    if (Math.abs(growth - treeParams.maturity) > 0.01) {
+      updateTree(); // Mettre à jour l'arbre
+    }
+
+    if (Math.abs(growth - treeParams.maturity) > 0.01) {
+      updateTree(); // Mettre à jour l'arbre
+    }
+
+    console.log("Growth: ", growth, " Target Growth: ", targetGrowth);
+    console.log("Maturity: ", treeParams.maturity);
+
+    requestAnimationFrame(updateTreeSmooth);
+  }
 
   if (address.startsWith("/encoder")) {
     let firstArgumentValue = msg.args[0].value;
 
-    // Update the trunk length dynamically based on OSC message
-    let encoder = firstArgumentValue / 100;
-    treeParams.maturity = Math.min(encoder, 1);
+    // Met à jour la cible de la croissance
+    if (firstArgumentValue == 1) {
+      targetGrowth += 0.05; // Augmente de 0.01 à chaque fois
+    } else if (firstArgumentValue == -1) {
+      targetGrowth -= 0.05; // Diminue de 0.01
+    }
 
-    // Call function to update the tree
-    updateTree();
+    // Assurer que la valeur de la croissance reste dans la plage [0, 1]
+    targetGrowth = Math.min(1, Math.max(0, targetGrowth));
+
+    requestAnimationFrame(updateTreeSmooth);
   }
+
   /*
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
@@ -363,12 +398,17 @@ oscSocket.on("message", function (msg) {
     treeParams.leaves.sizeVariance = firstArgumentValue;
     updateTree();
   }
+  if (address.startsWith("/sliderFour")) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.branch.lightVariance = firstArgumentValue;
+    updateTree();
+  }
   if (address.startsWith("/bouton1")) {
     console.log("reset");
 
     let random = Math.random();
     let randomSeed = random * 50000;
-    treeParams.maturity = 0;
+    targetGrowth = 0;
     treeParams.seed = randomSeed;
     // Call function to update the tree
     updateTree();
