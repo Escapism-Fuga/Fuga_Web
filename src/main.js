@@ -40,9 +40,9 @@ sunlight.castShadow = true;
 scene.add(sunlight);
 
 const spotLight = new THREE.SpotLight(0xffffff);
-spotLight.intensity = 50000;
+spotLight.intensity = 90000;
 spotLight.position.set(40, 80, 40);
-spotLight.distance = 150;
+spotLight.distance = 200;
 spotLight.castShadow = true;
 spotLight.shadow.camera.left = -30;
 spotLight.shadow.camera.right = 30;
@@ -55,6 +55,23 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 20, 0);
 camera.position.set(70, 20, 0);
+
+// Création des caméras pour les différents points de vue
+const cameraTop = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //top
+cameraTop.position.set(0, 50, 0);
+cameraTop.lookAt(0, 0, 0);
+
+const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left
+cameraLeft.position.set(50, 20, 20);
+cameraLeft.lookAt(0, 25, 0);
+
+const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right
+cameraRight.position.set(50, 20, 0);
+cameraRight.lookAt(0, 25, 0);
+
+const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right
+cameraFront.position.set(0, 20, 55);
+cameraFront.lookAt(0, 25, 0);
 
 // ---- POST-PROCESSING -------
 
@@ -231,8 +248,38 @@ gui.onChange(() => {
 });
 
 // --- RENDER LOOP ------
+// Fonction de rendu des différentes vues
+function renderMultipleViews() {
+  const width = window.innerWidth / 2;
+  const height = window.innerHeight / 2;
+
+  // --- Rendu pour la vue en haut à gauche ---
+  renderer.setViewport(0, height, width, height);
+  renderer.setScissor(0, height, width, height);
+  renderer.setScissorTest(true);
+  renderer.render(scene, cameraTop);
+
+  // --- Rendu pour la vue en haut à droite ---
+  renderer.setViewport(width, height, width, height);
+  renderer.setScissor(width, height, width, height);
+  renderer.setScissorTest(true);
+  renderer.render(scene, cameraRight);
+
+  // --- Rendu pour la vue en bas à gauche ---
+  renderer.setViewport(0, 0, width, height);
+  renderer.setScissor(0, 0, width, height);
+  renderer.setScissorTest(true);
+  renderer.render(scene, cameraLeft);
+
+  // --- Rendu pour la vue en bas à droite ---
+  renderer.setViewport(width, 0, width, height);
+  renderer.setScissor(width, 0, width, height);
+  renderer.setScissorTest(true);
+  renderer.render(scene, cameraFront);
+}
 
 let resetTimeout = null;
+// --- RENDU PRINCIPAL ---
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -253,14 +300,22 @@ function animate() {
     tree.generate();
   }
 
-  composer.render();
+  // Rendu des 4 vues
+  renderMultipleViews();
 }
 
-// Events
+// Evénement de redimensionnement pour ajuster la caméra et le rendu
 window.addEventListener('resize', () => {
-  // Resize camera aspect ratio and renderer size to the new window size
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
+  cameraTop.aspect = window.innerWidth / window.innerHeight;
+  cameraLeft.aspect = window.innerWidth / window.innerHeight;
+  cameraRight.aspect = window.innerWidth / window.innerHeight;
+  cameraFront.aspect = window.innerWidth / window.innerHeight;
+
+  cameraTop.updateProjectionMatrix();
+  cameraLeft.updateProjectionMatrix();
+  cameraRight.updateProjectionMatrix();
+  cameraFront.updateProjectionMatrix();
+
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
