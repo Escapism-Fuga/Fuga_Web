@@ -356,9 +356,11 @@ oscSocket.on("ready", function (msg) {
 
 let growth = 0; // Niveau de maturité brut (0-100)
 let targetGrowth = 0; // Cible vers laquelle on
+
 let rouge = 0;
 let vert = 0;
 let bleu = 0;
+
 oscSocket.on("message", function (msg) {
   let address = msg.address;
   let lerpSpeed = 0.05; // Plus lent si la différence est importante
@@ -378,12 +380,6 @@ oscSocket.on("message", function (msg) {
       updateTree(); // Mettre à jour l'arbre
     }
 
-    if (Math.abs(growth - treeParams.maturity) > 0.01) {
-      updateTree(); // Mettre à jour l'arbre
-    }
-
-    console.log("Growth: ", growth, " Target Growth: ", targetGrowth);
-    console.log("Maturity: ", treeParams.maturity);
 
     requestAnimationFrame(updateTreeSmooth);
   }
@@ -407,19 +403,21 @@ oscSocket.on("message", function (msg) {
 
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.maturity = firstArgumentValue;
+    treeParams.leaves.sizeVariance = firstArgumentValue;
     updateTree();
   }
   if (address.startsWith("/sliderTwo")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.sweepAngle = firstArgumentValue;
+    treeParams.branch.lengthVariance = firstArgumentValue;
     updateTree();
   }
+  /*
   if (address.startsWith("/sliderThree")) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.leaves.sizeVariance = firstArgumentValue;
     updateTree();
   }
+    */
 
   if (address.startsWith("/sliderR")) {
     let firstArgumentValue = msg.args[0].value;
@@ -434,8 +432,7 @@ oscSocket.on("message", function (msg) {
     bleu = firstArgumentValue;
   }
 
-  if (address.startsWith("/bouton1")) {
-    console.log("reset");
+  if (address.startsWith("/bouton")) {
 
     let random = Math.random();
     let randomSeed = random * 50000;
@@ -447,7 +444,6 @@ oscSocket.on("message", function (msg) {
 
   
   let newColor = new THREE.Color(rouge, vert, bleu);
-  console.log(rouge + vert + bleu)
     treeParams.leaves.color = newColor;
     updateTree();
   
