@@ -1,16 +1,38 @@
 import * as THREE from "three";
 import Stats from "three/examples/jsm/libs/stats.module";
-import { GUI } from "three/addons/libs/lil-gui.module.min.js";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
-import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
-import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import {
+  GUI
+} from "three/addons/libs/lil-gui.module.min.js";
+import {
+  OrbitControls
+} from "three/addons/controls/OrbitControls.js";
+import {
+  EffectComposer
+} from "three/addons/postprocessing/EffectComposer.js";
+import {
+  RenderPass
+} from "three/addons/postprocessing/RenderPass.js";
+import {
+  FXAAShader
+} from "three/addons/shaders/FXAAShader.js";
+import {
+  UnrealBloomPass
+} from "three/addons/postprocessing/UnrealBloomPass.js";
+import {
+  OutputPass
+} from "three/addons/postprocessing/OutputPass.js";
+import {
+  ShaderPass
+} from "three/addons/postprocessing/ShaderPass.js";
+import {
+  GLTFExporter
+} from "three/addons/exporters/GLTFExporter.js";
 
-import { Tree, LeafStyle, LeafType } from "./tree";
+import {
+  Tree,
+  LeafStyle,
+  LeafType
+} from "./tree";
 
 let clock = new THREE.Clock();
 // Instantiate a exporter
@@ -95,7 +117,7 @@ const treeParams = {
   animateGrowth: false,
 
   trunk: {
-    color: 0xd59d63, // Color of the tree trunk
+    color: "", // Color of the tree trunk
     flatShading: false, // Use face normals for shading instead of vertex normals
     textured: true, // Apply texture to bark
     length: 20, // Length of the trunk
@@ -246,13 +268,14 @@ bloomFolder.add(bloomPass, "strength", 0, 3).name("Strength");
 bloomFolder.add(bloomPass, "radius", 0, 10).name("Radius");
 
 gui
-  .add(
-    {
+  .add({
       export: () =>
         exporter.parse(
           tree,
           (glb) => {
-            const blob = new Blob([glb], { type: "application/octet-stream" });
+            const blob = new Blob([glb], {
+              type: "application/octet-stream"
+            });
             const url = window.URL.createObjectURL(blob);
             const link = document.getElementById("downloadLink");
             link.href = url;
@@ -261,8 +284,9 @@ gui
           },
           (err) => {
             console.error(err);
-          },
-          { binary: true }
+          }, {
+            binary: true
+          }
         ),
     },
     "export"
@@ -281,6 +305,7 @@ gui.onChange(() => {
 // --- RENDER LOOP ------
 
 let resetTimeout = null;
+
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -331,7 +356,9 @@ oscSocket.on("ready", function (msg) {
 
 let growth = 0; // Niveau de maturité brut (0-100)
 let targetGrowth = 0; // Cible vers laquelle on
-
+let rouge = 0;
+let vert = 0;
+let bleu = 0;
 oscSocket.on("message", function (msg) {
   let address = msg.address;
   let lerpSpeed = 0.05; // Plus lent si la différence est importante
@@ -377,17 +404,12 @@ oscSocket.on("message", function (msg) {
     requestAnimationFrame(updateTreeSmooth);
   }
 
-  /*
+
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
-
-    // Update the trunk length dynamically based on OSC message
     treeParams.maturity = firstArgumentValue;
-
-    // Call function to update the tree
     updateTree();
   }
-*/
   if (address.startsWith("/sliderTwo")) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.branch.sweepAngle = firstArgumentValue;
@@ -398,11 +420,20 @@ oscSocket.on("message", function (msg) {
     treeParams.leaves.sizeVariance = firstArgumentValue;
     updateTree();
   }
-  if (address.startsWith("/sliderFour")) {
+
+  if (address.startsWith("/sliderR")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.lightVariance = firstArgumentValue;
-    updateTree();
+    rouge = firstArgumentValue;
   }
+  if (address.startsWith("/sliderG")) {
+    let firstArgumentValue = msg.args[0].value;
+    vert = firstArgumentValue;
+  }
+  if (address.startsWith("/sliderB")) {
+    let firstArgumentValue = msg.args[0].value;
+    bleu = firstArgumentValue;
+  }
+
   if (address.startsWith("/bouton1")) {
     console.log("reset");
 
@@ -413,6 +444,13 @@ oscSocket.on("message", function (msg) {
     // Call function to update the tree
     updateTree();
   }
+
+  
+  let newColor = new THREE.Color(rouge, vert, bleu);
+  console.log(rouge + vert + bleu)
+    treeParams.leaves.color = newColor;
+    updateTree();
+  
 });
 
 // Function to update the tree (make sure this works with your tree generation logic)

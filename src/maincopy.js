@@ -349,65 +349,13 @@ oscSocket.on("message", function (msg) {
   if(address != null){
     
   }
-  if (address.startsWith("/sliderOne")) {
-    let firstArgumentValue = msg.args[0].value;
-    rouge = firstArgumentValue;
-  }
-
-  if (address.startsWith("/sliderTwo")) {
-    let firstArgumentValue = msg.args[0].value;
-    vert = firstArgumentValue;
-  }
-
-  if (address.startsWith("/sliderThree")) {
-    let firstArgumentValue = msg.args[0].value;
-    bleu = firstArgumentValue;
-  }
-
-  let newColor = new THREE.Color(rouge, vert, bleu);
-  console.log(rouge + vert + bleu)
-    treeParams.leaves.color = newColor;
-    updateTree();
-  
+ 
 
 
-  if (address.startsWith("/bouton1")) {
-    console.log("reset");
 
-    let firstArgumentValue = msg.args[0].value; 
-    if (firstArgumentValue == 1) {
-        changerCouleurTronc();
-    }
-
-    let randomSeed = Math.random() * 50000;
-    treeParams.maturity = 0;
-    treeParams.seed = randomSeed;
-
-    updateTree();
-}
 
 });
 
-/*
-const changerCouleurTronc = () => {
-    const randomColor = Math.floor(Math.random() * 16777215);
-    const randomColorLeaves = Math.floor(Math.random() * 16777215); // Crée une couleur aléatoire
-    treeParams.trunk.color = randomColor; // Met à jour la couleur dans treeParams
-    treeParams.leaves.color = randomColorLeaves; // Met à jour la couleur dans treeParams
-  
-    // Si nécessaire, force la mise à jour de l'objet 3D du tronc dans la scène (par exemple, en utilisant un matériau)
-    if (tree && tree.trunk && tree.trunk.material) {
-      tree.trunk.material.color.setHex(randomColor); // Change la couleur de l'objet 3D
-    }
-    if (tree && tree.leaves && tree.leaves.material) {
-        tree.leaves.material.color.setHex(randomColorLeaves); // Change la couleur de l'objet 3D
-      }
-  
-    // Met à jour l'affichage du tree
-    updateTree();
-    console.log("Nouvelle couleur du tronc : ", `0x${randomColor.toString(16)}`);
-  };
-  */
   
   
   
