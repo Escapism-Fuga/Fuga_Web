@@ -63,7 +63,7 @@ scene.add(sunlight);
 
 const spotLight = new THREE.SpotLight(0xffffff);
 spotLight.intensity = 50000;
-spotLight.position.set(40, 80, 40);
+spotLight.position.set(50, 80, 40);
 spotLight.distance = 150;
 spotLight.castShadow = true;
 spotLight.shadow.camera.left = -30;
