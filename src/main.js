@@ -411,13 +411,6 @@ oscSocket.on("message", function (msg) {
     treeParams.branch.lengthVariance = firstArgumentValue;
     updateTree();
   }
-  /*
-  if (address.startsWith("/sliderThree")) {
-    let firstArgumentValue = msg.args[0].value;
-    treeParams.leaves.sizeVariance = firstArgumentValue;
-    updateTree();
-  }
-    */
 
   if (address.startsWith("/sliderR")) {
     let firstArgumentValue = msg.args[0].value;
