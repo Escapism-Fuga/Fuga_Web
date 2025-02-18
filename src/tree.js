@@ -79,7 +79,7 @@ export class Tree extends THREE.Group {
       (this.branches.indices.length + this.leaves.indices.length) / 3;
     document.getElementById(
       "model-info"
-    ).innerText = `Vertex Count: ${vertexCount} | Triangle Count: ${triangleCount}`;
+    ).innerText = "";
   }
 
   /**
