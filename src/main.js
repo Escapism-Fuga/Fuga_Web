@@ -84,15 +84,15 @@ const cameraTop = new THREE.PerspectiveCamera(60, window.innerWidth / window.inn
 cameraTop.position.set(0, 50, 0);
 cameraTop.lookAt(0, 20, 0);
  
-const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left Devant
-cameraLeft.position.set(50, 20, 20);
-cameraLeft.lookAt(0, 0, 27);
+const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left gauche
+cameraLeft.position.set(50, 10, 10);
+cameraLeft.lookAt(20, -10, -50);
  
-const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right Ecran-droit
-cameraRight.position.set(50, 20, 0);
-cameraRight.lookAt(0, 0, 27);
+const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right Ecran-milieu
+cameraRight.position.set(40, 10, 10);
+cameraRight.lookAt(15, -10, -50);
  
-const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right Ecran-gauche
+const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right Ecran-droit
 cameraFront.position.set(50, 20, 0);
 cameraFront.lookAt(0, 0, 27);
 
@@ -190,6 +190,8 @@ const tree = new Tree(treeParams);
 tree.castShadow = true;
 tree.receiveShadow = true;
 scene.add(tree);
+
+tree.rotation.x = -Math.PI / 2; 
 
 // ---- UI -----
 
