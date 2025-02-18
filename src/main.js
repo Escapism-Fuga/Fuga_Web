@@ -59,19 +59,19 @@ camera.position.set(70, 20, 0);
 // Création des caméras pour les différents points de vue
 const cameraTop = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //top
 cameraTop.position.set(0, 50, 0);
-cameraTop.lookAt(0, 0, 0);
+cameraTop.lookAt(0, 20, 0);
 
 const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left Devant
 cameraLeft.position.set(50, 20, 20);
-cameraLeft.lookAt(0, 27, 0);
+cameraLeft.lookAt(0, 0, 27);
 
 const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right Ecran-droit
 cameraRight.position.set(50, 20, 0);
-cameraRight.lookAt(0, 27, 0);
+cameraRight.lookAt(0, 0, 27);
 
 const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right Ecran-gauche
-cameraFront.position.set(0, 20, 55);
-cameraFront.lookAt(0, 28, 0);
+cameraFront.position.set(50, 20, 0);
+cameraFront.lookAt(0, 0, 27);
 
 // ---- POST-PROCESSING -------
 
@@ -157,6 +157,9 @@ const treeParams = {
 const tree = new Tree(treeParams);
 tree.castShadow = true;
 tree.receiveShadow = true;
+
+tree.rotation.x = Math.PI / 2; 
+
 scene.add(tree);
 
 // ---- UI -----
@@ -320,3 +323,141 @@ window.addEventListener('resize', () => {
 });
 
 animate();
+
+// Configuration WebSocket
+let webSocketConnected = false;
+let socketPort = 8080;
+ 
+let oscSocket = new osc.WebSocketPort({
+  url: "ws://localhost:" + socketPort,
+  metadata: true,
+});
+ 
+// ON WEBSOCKET OPEN AND READY
+oscSocket.on("ready", function (msg) {
+  console.log("WebSocket Opened on Port " + socketPort + "/tree-js/");
+  webSocketConnected = true;
+});
+ 
+let growth = 0; // Niveau de maturité brut (0-100)
+let targetGrowth = 0; // Cible vers laquelle on
+ 
+oscSocket.on("message", function (msg) {
+  let address = msg.address;
+  let lerpSpeed = 0.05; // Plus lent si la différence est importante
+ 
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+ 
+  function updateTreeSmooth() {
+    // Limiter la vitesse de croissance de l'arbre
+    growth = lerp(growth, targetGrowth, lerpSpeed);
+ 
+    // Appliquer la maturité à la génération de l'arbre
+    treeParams.maturity = Math.min(1, Math.max(0, growth));
+ 
+    if (Math.abs(growth - treeParams.maturity) > 0.01) {
+      updateTree(); // Mettre à jour l'arbre
+    }
+ 
+    if (Math.abs(growth - treeParams.maturity) > 0.01) {
+      updateTree(); // Mettre à jour l'arbre
+    }
+
+    requestAnimationFrame(updateTreeSmooth);
+  }
+ 
+  if (address.startsWith("/encoder")) {
+    let firstArgumentValue = msg.args[0].value;
+ 
+    // Met à jour la cible de la croissance
+    if (firstArgumentValue == 1) {
+      targetGrowth += 0.05; // Augmente de 0.01 à chaque fois
+    } else if (firstArgumentValue == -1) {
+      targetGrowth -= 0.05; // Diminue de 0.01
+    }
+ 
+    // Assurer que la valeur de la croissance reste dans la plage [0, 1]
+    targetGrowth = Math.min(1, Math.max(0, targetGrowth));
+ 
+    requestAnimationFrame(updateTreeSmooth);
+  }
+
+  if (address.startsWith("/sliderTwo")) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.branch.sweepAngle = firstArgumentValue;
+    updateTree();
+  }
+  if (address.startsWith("/sliderOne")) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.leaves.sizeVariance = firstArgumentValue;
+    updateTree();
+  }
+  if (address.startsWith("/sliderR")) {
+    let firstArgumentValue = msg.args[0].value;
+    rouge = firstArgumentValue;
+    console.log("red = " + firstArgumentValue);
+  }
+  if (address.startsWith("/sliderG")) {
+    let firstArgumentValue = msg.args[0].value;
+    vert = firstArgumentValue;
+    console.log("rgreen  = " + firstArgumentValue)
+  }
+  if (address.startsWith("/sliderB")) {
+    let firstArgumentValue = msg.args[0].value;
+    bleu = firstArgumentValue;
+    console.log("bleu = " + firstArgumentValue)
+  }
+ 
+  if (address.startsWith("/bouton")) {
+ 
+    let random = Math.random();
+    let randomSeed = random * 50000;
+    targetGrowth = 0;
+    treeParams.seed = randomSeed;
+    // Call function to update the tree
+    updateTree();
+  }
+ 
+ 
+  let newColor = new THREE.Color(rouge, vert, bleu);
+    treeParams.leaves.color = newColor;
+    updateTree();
+ 
+  if (address.startsWith("/bouton1")) {
+    console.log("reset");
+ 
+    let random = Math.random();
+    let randomSeed = random * 50000;
+    targetGrowth = 0;
+    treeParams.seed = randomSeed;
+    // Call function to update the tree
+    updateTree();
+  }
+});
+ 
+// Function to update the tree (make sure this works with your tree generation logic)
+function updateTree() {
+  // Regenerate or update the tree based on the new parameters (like trunk length)
+  // Call the tree's generate method to update the geometry
+  tree.generate();
+}
+ 
+// ON WEBSOCKET CLOSED
+oscSocket.on("close", function (msg) {
+  console.log("WebSocket closed");
+  messageText.innerText = "WebSocket closed";
+  webSocketConnected = false;
+});
+ 
+// ON WINDOW UNLOAD
+window.addEventListener("beforeunload", (event) => {
+  oscSocket.close();
+});
+ 
+// ON WINDOW LOAD
+window.addEventListener("load", (event) => {
+  oscSocket.open();
+});
+ 
