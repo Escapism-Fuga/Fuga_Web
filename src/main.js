@@ -285,7 +285,7 @@ let rouge = 0;
 let vert = 0;
 let bleu = 0;
 
-let lerpSpeed = 0.00005; // Plus lent si la différence est importante
+let lerpSpeed = 0; // Plus lent si la différence est importante
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
@@ -348,9 +348,11 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderGrow")) {
     let firstArgumentValue = msg.args[0].value;
-    targetGrowth = firstArgumentValue;
+    lerpSpeed = firstArgumentValue / 100000;
 
-    targetGrowth = Math.min(1, Math.max(0, firstArgumentValue));
+    if (firstArgumentValue > 0.5) {
+      targetGrowth = 1;
+    }
 
     updateTreeSmooth();
   }
