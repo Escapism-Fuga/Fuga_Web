@@ -94,8 +94,9 @@ cameraRight.lookAt(0, 21, 0);
  
 const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right droit
 cameraFront.position.set(-10, -10, 15);
-cameraFront.lookAt(0, 30, -5);
+cameraFront.lookAt(0, 33.7, -5);
 
+// Camera Version
 /*const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left gauche
 cameraLeft.position.set(0, 10, 50);
 cameraLeft.lookAt(0, 0, 0);
@@ -331,6 +332,39 @@ gui.onChange(() => {
 });
 
 // --- RENDER LOOP ------
+
+// Background Void
+
+
+// Create a video element
+const video = document.createElement('video');
+video.src = './assets/background-loop-v2.mp4'; // Specify the path to your video
+video.load();
+video.play();
+video.loop = true; // Set video to loop
+
+// Create a texture from the video
+const videoTexture = new THREE.VideoTexture(video);
+
+// Create a material with the video texture
+const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
+
+// Create a plane geometry to display the video
+const videoGeometry = new THREE.PlaneGeometry(16, 9); // Adjust the size as needed
+
+// Create the mesh (the object to show the video)
+const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
+
+// Position the mesh in the scene
+videoMesh.position.set(0, 10, -20); // Adjust the position as needed
+scene.add(videoMesh);
+
+
+/*const loader = new THREE.TextureLoader();
+loader.load('./assets/bg-void.png', (texture) => {
+  scene.background = texture;
+});*/
+
 // Fonction de rendu des différentes vues
 function renderMultipleViews() {
   const width = window.innerWidth / 2;
