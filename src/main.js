@@ -1,23 +1,45 @@
-import * as THREE from 'three';
-import Stats from 'three/examples/jsm/libs/stats.module'
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import * as THREE from "three";
+import Stats from "three/examples/jsm/libs/stats.module";
+import {
+  GUI
+} from "three/addons/libs/lil-gui.module.min.js";
+import {
+  OrbitControls
+} from "three/addons/controls/OrbitControls.js";
+import {
+  EffectComposer
+} from "three/addons/postprocessing/EffectComposer.js";
+import {
+  RenderPass
+} from "three/addons/postprocessing/RenderPass.js";
+import {
+  FXAAShader
+} from "three/addons/shaders/FXAAShader.js";
+import {
+  UnrealBloomPass
+} from "three/addons/postprocessing/UnrealBloomPass.js";
+import {
+  OutputPass
+} from "three/addons/postprocessing/OutputPass.js";
+import {
+  ShaderPass
+} from "three/addons/postprocessing/ShaderPass.js";
+import {
+  GLTFExporter
+} from "three/addons/exporters/GLTFExporter.js";
 
-import { Tree, LeafStyle, LeafType } from './tree';
+import {
+  Tree,
+  LeafStyle,
+  LeafType
+} from "./tree";
 
 let clock = new THREE.Clock();
 // Instantiate a exporter
 const exporter = new GLTFExporter();
 
-const stats = new Stats()
-document.body.appendChild(stats.dom)
+const stats = new Stats();
+document.body.appendChild(stats.dom);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setClearColor(0);
@@ -40,38 +62,52 @@ sunlight.castShadow = true;
 scene.add(sunlight);
 
 const spotLight = new THREE.SpotLight(0xffffff);
-spotLight.intensity = 100000;
+spotLight.intensity = 50000;
 spotLight.position.set(50, 80, 40);
-spotLight.distance = 200;
+spotLight.distance = 150;
 spotLight.castShadow = true;
 spotLight.shadow.camera.left = -30;
 spotLight.shadow.camera.right = 30;
 spotLight.shadow.camera.top = 30;
 spotLight.shadow.camera.bottom = -30;
-spotLight.shadow.mapSize = new THREE.Vector2(2048, 2048);
+spotLight.shadow.mapSize = new THREE.Vector2(1024, 1024);
 scene.add(spotLight);
 
+// Camera
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 20, 0);
 camera.position.set(70, 20, 0);
-
+ 
 // Création des caméras pour les différents points de vue
 const cameraTop = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //top
 cameraTop.position.set(0, 50, 0);
 cameraTop.lookAt(0, 20, 0);
+ 
+const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left gauche
+cameraLeft.position.set(15, 45, -20);
+cameraLeft.lookAt(-5, 30, -4);
+ 
+const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right millieu
+cameraRight.position.set(33, 20, 20);
+cameraRight.lookAt(0, 21, 0);
+ 
+const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right droit
+cameraFront.position.set(-10, -10, 15);
+cameraFront.lookAt(0, 30, -5);
 
-const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left Devant
-cameraLeft.position.set(50, 20, 20);
-cameraLeft.lookAt(0, 0, 27);
+/*const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left gauche
+cameraLeft.position.set(0, 10, 50);
+cameraLeft.lookAt(0, 0, 0);
+ 
+const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right millieu
+cameraRight.position.set(10, 20, 10); // Position the camera closer to the scene (centered more)
+cameraRight.lookAt(-5, 0, 0);
+ 
+const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right droit
+cameraFront.position.set(10, 0, 10);
+cameraFront.lookAt(-5, 0, 20);*/
 
-const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right Ecran-droit
-cameraRight.position.set(50, 20, 0);
-cameraRight.lookAt(0, 0, 27);
-
-const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right Ecran-gauche
-cameraFront.position.set(50, 20, 0);
-cameraFront.lookAt(0, 0, 27);
 
 // ---- POST-PROCESSING -------
 
@@ -80,7 +116,12 @@ const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0, 0.2);
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  0.2,
+  0,
+  0.2
+);
 composer.addPass(bloomPass);
 
 const outputPass = new OutputPass();
@@ -88,8 +129,10 @@ composer.addPass(outputPass);
 
 const pixelRatio = renderer.getPixelRatio();
 const fxaaPass = new ShaderPass(FXAAShader);
-fxaaPass.material.uniforms['resolution'].value.x = 1 / (renderer.domElement.offsetWidth * pixelRatio);
-fxaaPass.material.uniforms['resolution'].value.y = 1 / (renderer.domElement.offsetHeight * pixelRatio);
+fxaaPass.material.uniforms["resolution"].value.x =
+  1 / (renderer.domElement.offsetWidth * pixelRatio);
+fxaaPass.material.uniforms["resolution"].value.y =
+  1 / (renderer.domElement.offsetHeight * pixelRatio);
 composer.addPass(fxaaPass);
 
 // ----- TREE -----------
@@ -100,39 +143,39 @@ const treeParams = {
   animateGrowth: false,
 
   trunk: {
-    color: 0xd59d63,       // Color of the tree trunk
-    flatShading: false,    // Use face normals for shading instead of vertex normals
-    textured: true,        // Apply texture to bark
-    length: 20,            // Length of the trunk
-    radius: 1.5,           // Starting radius of the trunk
-    flare: 1.0             // Multipler for base of trunk
+    color: "", // Color of the tree trunk
+    flatShading: false, // Use face normals for shading instead of vertex normals
+    textured: true, // Apply texture to bark
+    length: 20, // Length of the trunk
+    radius: 1.5, // Starting radius of the trunk
+    flare: 1.0, // Multipler for base of trunk
   },
 
   branch: {
-    levels: 4,               // Number of branch recursions ( Keep under 5 )
-    start: .6,               // Defines where child branches start forming on the parent branch. A value of 0.6 means the
+    levels: 4, // Number of branch recursions ( Keep under 5 )
+    start: 0.6, // Defines where child branches start forming on the parent branch. A value of 0.6 means the
     // child branches can start forming 60% of the way up the parent branch
-    stop: .95,               // Defines where child branches stop forming on the parent branch. A value of 0.9 means the
+    stop: 0.95, // Defines where child branches stop forming on the parent branch. A value of 0.9 means the
     // child branches stop forming 90% of the way up the parent branch
-    sweepAngle: 2,           // Max sweep of the branches (radians)
-    minChildren: 3,          // Minimum number of child branches
-    maxChildren: 4,          // Maximum number of child branches
-    lengthVariance: 0.2,     // % variance in branch length
-    lengthMultiplier: .7,    // Length of child branch relative to parent
-    radiusMultiplier: .9,    // Radius of child branch relative to parent
-    taper: .7,               // Radius of end of branch relative to the start of the branch
-    gnarliness: 0.2,         // Max amplitude of random angle added to each section's orientation
-    gnarliness1_R: 0.05,  // Same as above, but inversely proportional to the branch radius
+    sweepAngle: 2, // Max sweep of the branches (radians)
+    minChildren: 3, // Minimum number of child branches
+    maxChildren: 4, // Maximum number of child branches
+    lengthVariance: 0.2, // % variance in branch length
+    lengthMultiplier: 0.7, // Length of child branch relative to parent
+    radiusMultiplier: 0.9, // Radius of child branch relative to parent
+    taper: 0.7, // Radius of end of branch relative to the start of the branch
+    gnarliness: 0.2, // Max amplitude of random angle added to each section's orientation
+    gnarliness1_R: 0.05, // Same as above, but inversely proportional to the branch radius
     // The two terms can be used to balance gnarliness of trunk vs. branches
     twist: 0.0,
   },
 
   geometry: {
-    sections: 10,             // Number of sections that make up this branch 
-    segments: 12,           // Number of faces around the circumference of the branch
-    lengthVariance: 0.1,   // % variance in the nominal section length
-    radiusVariance: 0.1,   // % variance in the nominal section radius
-    randomization: 0.1,    // Randomization factor applied to vertices
+    sections: 6, // Number of sections that make up this branch
+    segments: 10, // Number of faces around the circumference of the branch
+    lengthVariance: 0.1, // % variance in the nominal section length
+    radiusVariance: 0.1, // % variance in the nominal section radius
+    randomization: 0.1, // Randomization factor applied to vertices
   },
 
   leaves: {
@@ -145,105 +188,142 @@ const treeParams = {
     color: 0x6b7f48,
     emissive: 0.02,
     opacity: 1,
-    alphaTest: 0.5
+    alphaTest: 0.5,
   },
 
   sun: {
     direction: new THREE.Vector3(0, 1, 0),
-    strength: 0.02
-  }
-}
+    strength: 0.02,
+  },
+};
 
 const tree = new Tree(treeParams);
 tree.castShadow = true;
 tree.receiveShadow = true;
-
-tree.rotation.x = Math.PI / 2; 
-
 scene.add(tree);
+
+//tree.rotation.x = Math.PI / 2;
 
 // ---- UI -----
 
 const gui = new GUI();
-gui.add(tree.params, 'seed', 0, 65536, 1).name('Seed');
-gui.add(tree.params, 'maturity', 0, 1).name('Maturity');
-gui.add(tree.params, 'animateGrowth', 0, 1).name('Animate Growth');
-
-const trunkFolder = gui.addFolder('Trunk').close();
-trunkFolder.addColor(tree.params.trunk, 'color').name('Color');
-trunkFolder.add(tree.params.trunk, 'flatShading').name('Flat Shading');
-trunkFolder.add(tree.params.trunk, 'length', 0, 50).name('Length');
-trunkFolder.add(tree.params.trunk, 'radius', 0, 5).name('Radius');
-trunkFolder.add(tree.params.trunk, 'flare', 0, 5).name('Flare');
-
-const branchFolder = gui.addFolder('Branches').close();
-branchFolder.add(tree.params.branch, 'levels', 1, 5, 1).name('Levels');
-branchFolder.add(tree.params.branch, 'start', 0, 1).name('Start');
-branchFolder.add(tree.params.branch, 'stop', 0, 1).name('Stop');
-branchFolder.add(tree.params.branch, 'minChildren', 0, 10, 1).name('Min Children');
-branchFolder.add(tree.params.branch, 'maxChildren', 0, 10, 1).name('Max Children');
-branchFolder.add(tree.params.branch, 'sweepAngle', 0, Math.PI).name('Sweep Angle');
-branchFolder.add(tree.params.branch, 'lengthVariance', 0, 1).name('Length Variance');
-branchFolder.add(tree.params.branch, 'lengthMultiplier', 0, 1).name('Length Multiplier');
-branchFolder.add(tree.params.branch, 'radiusMultiplier', 0, 1).name('Radius Multiplier');
-branchFolder.add(tree.params.branch, 'taper', 0.5, 1).name('Taper');
-branchFolder.add(tree.params.branch, 'gnarliness', 0, 0.5).name('Gnarliness (1)');
-branchFolder.add(tree.params.branch, 'gnarliness1_R', 0, 0.25).name('Gnarliness (1/R)');
-branchFolder.add(tree.params.branch, 'twist', -0.25, 0.25, 0.01).name('Twist Strength');
-
-const geometryFolder = gui.addFolder('Geometry').close();
-geometryFolder.add(tree.params.geometry, 'sections', 1, 20, 1).name('Section Count');
-geometryFolder.add(tree.params.geometry, 'lengthVariance', 0, 1).name('Section Length Variance');
-geometryFolder.add(tree.params.geometry, 'radiusVariance', 0, 1).name('Section Radius Variance');
-geometryFolder.add(tree.params.geometry, 'segments', 3, 32, 1).name('Radial Segment Count');
-geometryFolder.add(tree.params.geometry, 'randomization', 0, 0.5).name('Vertex Randomization');
-
-const leavesFolder = gui.addFolder('Leaves').close();
-leavesFolder.add(tree.params.leaves, 'style', LeafStyle).name('Style');
-leavesFolder.add(tree.params.leaves, 'type', LeafType);
-leavesFolder.add(tree.params.leaves, 'size', 0, 5).name('Size');
-leavesFolder.add(tree.params.leaves, 'sizeVariance', 0, 1).name('Size Variance');
-leavesFolder.add(tree.params.leaves, 'minCount', 0, 100, 1).name('Min Count');
-leavesFolder.add(tree.params.leaves, 'maxCount', 0, 100, 1).name('Max Count');
-leavesFolder.addColor(tree.params.leaves, 'color').name('Color');
-leavesFolder.add(tree.params.leaves, 'emissive', 0, 1).name('Emissive');
-leavesFolder.add(tree.params.leaves, 'opacity', 0, 1).name('Opacity');
-leavesFolder.add(tree.params.leaves, 'alphaTest', 0, 1).name('AlphaTest');
-
-const forceFolder = gui.addFolder('Sun Direction').close();
-const directionFolder = forceFolder.addFolder('Sun Direction');
-directionFolder.add(tree.params.sun.direction, 'x', -1, 1).name('X');
-directionFolder.add(tree.params.sun.direction, 'y', -1, 1).name('Y');
-directionFolder.add(tree.params.sun.direction, 'z', -1, 1).name('Z');
-forceFolder.add(tree.params.sun, 'strength', -0.1, 0.1).name('Sun Strength');
-
-const postProcessingFolder = gui.addFolder('Post Processing').close();
-const bloomFolder = postProcessingFolder.addFolder('Bloom');
-bloomFolder.add(bloomPass, 'threshold', 0, 1).name('Threshold');
-bloomFolder.add(bloomPass, 'strength', 0, 3).name('Strength');
-bloomFolder.add(bloomPass, 'radius', 0, 10).name('Radius');
-
-gui.add({
-  export: () => exporter.parse(
-    tree,
-    (glb) => {
-      const blob = new Blob([glb], { type: 'application/octet-stream' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.getElementById('downloadLink');
-      link.href = url;
-      link.download = 'tree.glb';
-      link.click();
+gui.add(tree.params, "seed", 0, 65536, 1).name("Seed");
+gui.add(tree.params, "maturity", 0, 1).name("Maturity");
+gui.add(tree.params, "animateGrowth", 0, 1).name("Animate Growth");
+ 
+const trunkFolder = gui.addFolder("Trunk").close();
+trunkFolder.addColor(tree.params.trunk, "color").name("Color");
+trunkFolder.add(tree.params.trunk, "flatShading").name("Flat Shading");
+trunkFolder.add(tree.params.trunk, "length", 0, 50).name("Length");
+trunkFolder.add(tree.params.trunk, "radius", 0, 5).name("Radius");
+trunkFolder.add(tree.params.trunk, "flare", 0, 5).name("Flare");
+ 
+const branchFolder = gui.addFolder("Branches").close();
+branchFolder.add(tree.params.branch, "levels", 1, 5, 1).name("Levels");
+branchFolder.add(tree.params.branch, "start", 0, 1).name("Start");
+branchFolder.add(tree.params.branch, "stop", 0, 1).name("Stop");
+branchFolder
+  .add(tree.params.branch, "minChildren", 0, 10, 1)
+  .name("Min Children");
+branchFolder
+  .add(tree.params.branch, "maxChildren", 0, 10, 1)
+  .name("Max Children");
+branchFolder
+  .add(tree.params.branch, "sweepAngle", 0, Math.PI)
+  .name("Sweep Angle");
+branchFolder
+  .add(tree.params.branch, "lengthVariance", 0, 1)
+  .name("Length Variance");
+branchFolder
+  .add(tree.params.branch, "lengthMultiplier", 0, 1)
+  .name("Length Multiplier");
+branchFolder
+  .add(tree.params.branch, "radiusMultiplier", 0, 1)
+  .name("Radius Multiplier");
+branchFolder.add(tree.params.branch, "taper", 0.5, 1).name("Taper");
+branchFolder
+  .add(tree.params.branch, "gnarliness", 0, 0.5)
+  .name("Gnarliness (1)");
+branchFolder
+  .add(tree.params.branch, "gnarliness1_R", 0, 0.25)
+  .name("Gnarliness (1/R)");
+branchFolder
+  .add(tree.params.branch, "twist", -0.25, 0.25, 0.01)
+  .name("Twist Strength");
+ 
+const geometryFolder = gui.addFolder("Geometry").close();
+geometryFolder
+  .add(tree.params.geometry, "sections", 1, 20, 1)
+  .name("Section Count");
+geometryFolder
+  .add(tree.params.geometry, "lengthVariance", 0, 1)
+  .name("Section Length Variance");
+geometryFolder
+  .add(tree.params.geometry, "radiusVariance", 0, 1)
+  .name("Section Radius Variance");
+geometryFolder
+  .add(tree.params.geometry, "segments", 3, 32, 1)
+  .name("Radial Segment Count");
+geometryFolder
+  .add(tree.params.geometry, "randomization", 0, 0.5)
+  .name("Vertex Randomization");
+ 
+const leavesFolder = gui.addFolder("Leaves").close();
+leavesFolder.add(tree.params.leaves, "style", LeafStyle).name("Style");
+leavesFolder.add(tree.params.leaves, "type", LeafType);
+leavesFolder.add(tree.params.leaves, "size", 0, 5).name("Size");
+leavesFolder
+  .add(tree.params.leaves, "sizeVariance", 0, 1)
+  .name("Size Variance");
+leavesFolder.add(tree.params.leaves, "minCount", 0, 100, 1).name("Min Count");
+leavesFolder.add(tree.params.leaves, "maxCount", 0, 100, 1).name("Max Count");
+leavesFolder.addColor(tree.params.leaves, "color").name("Color");
+leavesFolder.add(tree.params.leaves, "emissive", 0, 1).name("Emissive");
+leavesFolder.add(tree.params.leaves, "opacity", 0, 1).name("Opacity");
+leavesFolder.add(tree.params.leaves, "alphaTest", 0, 1).name("AlphaTest");
+ 
+const forceFolder = gui.addFolder("Sun Direction").close();
+const directionFolder = forceFolder.addFolder("Sun Direction");
+directionFolder.add(tree.params.sun.direction, "x", -1, 1).name("X");
+directionFolder.add(tree.params.sun.direction, "y", -1, 1).name("Y");
+directionFolder.add(tree.params.sun.direction, "z", -1, 1).name("Z");
+forceFolder.add(tree.params.sun, "strength", -0.1, 0.1).name("Sun Strength");
+ 
+const postProcessingFolder = gui.addFolder("Post Processing").close();
+const bloomFolder = postProcessingFolder.addFolder("Bloom");
+bloomFolder.add(bloomPass, "threshold", 0, 1).name("Threshold");
+bloomFolder.add(bloomPass, "strength", 0, 3).name("Strength");
+bloomFolder.add(bloomPass, "radius", 0, 10).name("Radius");
+ 
+gui
+  .add({
+      export: () =>
+        exporter.parse(
+          tree,
+          (glb) => {
+            const blob = new Blob([glb], {
+              type: "application/octet-stream"
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.getElementById("downloadLink");
+            link.href = url;
+            link.download = "tree.glb";
+            link.click();
+          },
+          (err) => {
+            console.error(err);
+          }, {
+            binary: true
+          }
+        ),
     },
-    (err) => {
-      console.error(err);
-    },
-    { binary: true }
+    "export"
   )
-}, 'export').name('Export to GLB');
-
+  .name("Export to GLB");
+ 
 gui.onChange(() => {
   tree.generate();
-  tree.traverse(o => {
+  tree.traverse((o) => {
     if (o.material) {
       o.material.needsUpdate = true;
     }
@@ -255,25 +335,20 @@ gui.onChange(() => {
 function renderMultipleViews() {
   const width = window.innerWidth / 2;
   const height = window.innerHeight / 2;
-
-  // --- Rendu pour la vue en haut à gauche ---
-  renderer.setViewport(0, height, width, height);
-  renderer.setScissor(0, height, width, height);
-  renderer.setScissorTest(true);
-  renderer.render(scene, cameraTop);
-
+ 
+ 
   // --- Rendu pour la vue en haut à droite ---
   renderer.setViewport(width, height, width, height);
   renderer.setScissor(width, height, width, height);
   renderer.setScissorTest(true);
   renderer.render(scene, cameraRight);
-
+ 
   // --- Rendu pour la vue en bas à gauche ---
   renderer.setViewport(0, 0, width, height);
   renderer.setScissor(0, 0, width, height);
   renderer.setScissorTest(true);
   renderer.render(scene, cameraLeft);
-
+ 
   // --- Rendu pour la vue en bas à droite ---
   renderer.setViewport(width, 0, width, height);
   renderer.setScissor(width, 0, width, height);
@@ -281,17 +356,18 @@ function renderMultipleViews() {
   renderer.render(scene, cameraFront);
 }
 
+
 let resetTimeout = null;
 // --- RENDU PRINCIPAL ---
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
   stats.update();
-
+ 
   if (treeParams.animateGrowth) {
     const dt = clock.getDelta();
     tree.params.maturity = Math.min(1, tree.params.maturity + 0.2 * dt);
-
+ 
     if (tree.params.maturity >= 1 && !resetTimeout) {
       resetTimeout = setTimeout(() => {
         tree.params.seed = Math.random() * 60000;
@@ -299,119 +375,119 @@ function animate() {
         resetTimeout = null;
       }, 3000);
     }
-
+ 
     tree.generate();
   }
-
+ 
   // Rendu des 4 vues
   renderMultipleViews();
 }
-
+ 
 // Evénement de redimensionnement pour ajuster la caméra et le rendu
 window.addEventListener('resize', () => {
   cameraTop.aspect = window.innerWidth / window.innerHeight;
   cameraLeft.aspect = window.innerWidth / window.innerHeight;
   cameraRight.aspect = window.innerWidth / window.innerHeight;
   cameraFront.aspect = window.innerWidth / window.innerHeight;
-
+ 
   cameraTop.updateProjectionMatrix();
   cameraLeft.updateProjectionMatrix();
   cameraRight.updateProjectionMatrix();
   cameraFront.updateProjectionMatrix();
-
+ 
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
+ 
 animate();
 
 // Configuration WebSocket
 let webSocketConnected = false;
 let socketPort = 8080;
- 
+
 let oscSocket = new osc.WebSocketPort({
   url: "ws://localhost:" + socketPort,
   metadata: true,
 });
- 
+
 // ON WEBSOCKET OPEN AND READY
 oscSocket.on("ready", function (msg) {
   console.log("WebSocket Opened on Port " + socketPort + "/tree-js/");
   webSocketConnected = true;
 });
- 
+
 let growth = 0; // Niveau de maturité brut (0-100)
 let targetGrowth = 0; // Cible vers laquelle on
- 
+
+let rouge = 0;
+let vert = 0;
+let bleu = 0;
+
 oscSocket.on("message", function (msg) {
   let address = msg.address;
   let lerpSpeed = 0.05; // Plus lent si la différence est importante
- 
+
   function lerp(a, b, t) {
     return a + (b - a) * t;
   }
- 
+
   function updateTreeSmooth() {
     // Limiter la vitesse de croissance de l'arbre
     growth = lerp(growth, targetGrowth, lerpSpeed);
- 
+
     // Appliquer la maturité à la génération de l'arbre
     treeParams.maturity = Math.min(1, Math.max(0, growth));
- 
-    if (Math.abs(growth - treeParams.maturity) > 0.01) {
-      updateTree(); // Mettre à jour l'arbre
-    }
- 
+
     if (Math.abs(growth - treeParams.maturity) > 0.01) {
       updateTree(); // Mettre à jour l'arbre
     }
 
+
     requestAnimationFrame(updateTreeSmooth);
   }
- 
+
   if (address.startsWith("/encoder")) {
     let firstArgumentValue = msg.args[0].value;
- 
+
     // Met à jour la cible de la croissance
     if (firstArgumentValue == 1) {
       targetGrowth += 0.05; // Augmente de 0.01 à chaque fois
     } else if (firstArgumentValue == -1) {
       targetGrowth -= 0.05; // Diminue de 0.01
     }
- 
+
     // Assurer que la valeur de la croissance reste dans la plage [0, 1]
     targetGrowth = Math.min(1, Math.max(0, targetGrowth));
- 
+
     requestAnimationFrame(updateTreeSmooth);
   }
 
-  if (address.startsWith("/sliderTwo")) {
-    let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.sweepAngle = firstArgumentValue;
-    updateTree();
-  }
+
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.leaves.sizeVariance = firstArgumentValue;
     updateTree();
   }
+  if (address.startsWith("/sliderTwo")) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.branch.lengthVariance = firstArgumentValue;
+    updateTree();
+  }
+
   if (address.startsWith("/sliderR")) {
     let firstArgumentValue = msg.args[0].value;
     rouge = firstArgumentValue;
-    console.log("red = " + firstArgumentValue);
   }
   if (address.startsWith("/sliderG")) {
     let firstArgumentValue = msg.args[0].value;
     vert = firstArgumentValue;
-    console.log("rgreen  = " + firstArgumentValue)
   }
   if (address.startsWith("/sliderB")) {
     let firstArgumentValue = msg.args[0].value;
     bleu = firstArgumentValue;
-    console.log("bleu = " + firstArgumentValue)
   }
- 
+
   if (address.startsWith("/bouton")) {
- 
+
     let random = Math.random();
     let randomSeed = random * 50000;
     targetGrowth = 0;
@@ -419,45 +495,34 @@ oscSocket.on("message", function (msg) {
     // Call function to update the tree
     updateTree();
   }
- 
- 
+
+  
   let newColor = new THREE.Color(rouge, vert, bleu);
     treeParams.leaves.color = newColor;
     updateTree();
- 
-  if (address.startsWith("/bouton1")) {
-    console.log("reset");
- 
-    let random = Math.random();
-    let randomSeed = random * 50000;
-    targetGrowth = 0;
-    treeParams.seed = randomSeed;
-    // Call function to update the tree
-    updateTree();
-  }
+  
 });
- 
+
 // Function to update the tree (make sure this works with your tree generation logic)
 function updateTree() {
   // Regenerate or update the tree based on the new parameters (like trunk length)
   // Call the tree's generate method to update the geometry
   tree.generate();
 }
- 
+
 // ON WEBSOCKET CLOSED
 oscSocket.on("close", function (msg) {
   console.log("WebSocket closed");
   messageText.innerText = "WebSocket closed";
   webSocketConnected = false;
 });
- 
+
 // ON WINDOW UNLOAD
 window.addEventListener("beforeunload", (event) => {
   oscSocket.close();
 });
- 
+
 // ON WINDOW LOAD
 window.addEventListener("load", (event) => {
   oscSocket.open();
 });
- 
