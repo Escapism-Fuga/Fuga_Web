@@ -285,7 +285,7 @@ let rouge = 0;
 let vert = 0;
 let bleu = 0;
 
-let lerpSpeed = 0.0001; // Plus lent si la différence est importante
+let lerpSpeed = 0.00005; // Plus lent si la différence est importante
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
