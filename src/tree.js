@@ -5,7 +5,7 @@ const loader = new THREE.TextureLoader();
 
 function loadTexture(path) {
   return loader.load(path, (tex) => {
-    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.colorSpace = new THREE.Color("hsl(0, 0, 0)");
   });
 }
 const barkTexture = loadTexture(`textures/bark/bark.png`);
@@ -77,9 +77,6 @@ export class Tree extends THREE.Group {
       (this.branches.verts.length + this.leaves.verts.length) / 3;
     const triangleCount =
       (this.branches.indices.length + this.leaves.indices.length) / 3;
-    document.getElementById(
-      "model-info"
-    ).innerText = "";
   }
 
   /**
