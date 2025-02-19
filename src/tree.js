@@ -5,7 +5,7 @@ const loader = new THREE.TextureLoader();
 
 function loadTexture(path) {
   return loader.load(path, (tex) => {
-    tex.colorSpace = new THREE.Color("hsl(0, 0, 0)");
+    tex.colorSpace = THREE.SRGBColorSpace;
   });
 }
 const barkTexture = loadTexture(`textures/bark/bark.png`);

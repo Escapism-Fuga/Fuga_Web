@@ -285,6 +285,29 @@ let rouge = 0;
 let vert = 0;
 let bleu = 0;
 
+let lerpSpeed = 0.0001; // Plus lent si la différence est importante
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+let growth = 0;
+let targetGrowth = 0;
+
+function updateTreeSmooth() {
+  // Limiter la vitesse de croissance de l'arbre
+  growth = lerp(growth, targetGrowth, lerpSpeed);
+
+  // Appliquer la maturité à la génération de l'arbre
+  treeParams.maturity = Math.min(1, Math.max(0, growth));
+
+  if (Math.abs(growth - treeParams.maturity) > 0.01) {
+    updateTree(); // Mettre à jour l'arbre
+  }
+
+  requestAnimationFrame(updateTreeSmooth);
+}
+
 oscSocket.on("message", function (msg) {
   let address = msg.address;
 
@@ -323,9 +346,13 @@ oscSocket.on("message", function (msg) {
     let firstArgumentValue = msg.args[0].value;
     vert = firstArgumentValue;
   }
-  if (address.startsWith("/sliderG")) {
+  if (address.startsWith("/sliderGrow")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.maturity = firstArgumentValue;
+    targetGrowth = firstArgumentValue;
+
+    targetGrowth = Math.min(1, Math.max(0, firstArgumentValue));
+
+    updateTreeSmooth();
   }
   if (address.startsWith("/sliderB")) {
     let firstArgumentValue = msg.args[0].value;
@@ -333,14 +360,12 @@ oscSocket.on("message", function (msg) {
   }
 
   if (address.startsWith("/bouton")) {
+    growth = 0;
     let random = Math.random();
     let randomSeed = random * 50000;
     treeParams.seed = randomSeed;
-    treeParams.maturity = 0;
     // Call function to update the tree
-    animate();
-
-    updateTree();
+    updateTreeSmooth();
   }
 
   let newColor = new THREE.Color(hue, vert, bleu);
