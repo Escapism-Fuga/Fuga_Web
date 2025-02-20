@@ -338,7 +338,7 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderThree")) {
     let firstArgumentValue = msg.args[0].value;
-    // treeParams.branch.lengthVariance = firstArgumentValue;
+    treeParams.trunk.flare = firstArgumentValue;
     updateTree();
   }
 
@@ -367,7 +367,11 @@ oscSocket.on("message", function (msg) {
     let randomSeed = random * 50000;
     treeParams.seed = randomSeed;
     // Call function to update the tree
+<<<<<<< Updated upstream
     updateTreeSmooth();
+=======
+    updateTree();
+>>>>>>> Stashed changes
   }
 
   let newColor = new THREE.Color(hue, vert, bleu);
