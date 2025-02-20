@@ -316,12 +316,12 @@ oscSocket.on("message", function (msg) {
 
     // Met à jour la cible de la croissance
     if (firstArgumentValue == 1) {
-      hue += 1; // Augmente de 0.01 à chaque fois
+      hue += 0.001; // Augmente de 0.01 à chaque fois
     } else if (firstArgumentValue == -1) {
-      hue -= 1; // Diminue de 0.01
+      hue -= 0.001; // Diminue de 0.01
     }
 
-    if (hue == 360) {
+    if (hue == 1) {
       hue = 0;
     }
   }
@@ -358,7 +358,7 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderB")) {
     let firstArgumentValue = msg.args[0].value;
-    bleu = firstArgumentValue;
+    bleu = firstArgumentValue / 3;
   }
 
   if (address.startsWith("/bouton")) {
@@ -370,7 +370,7 @@ oscSocket.on("message", function (msg) {
     updateTreeSmooth();
   }
 
-  let newColor = new THREE.Color(hue, vert, bleu);
+  mat.color(hue, vert, bleu);
   treeParams.leaves.color = newColor;
   updateTree();
 });
