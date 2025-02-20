@@ -9,6 +9,8 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+
 
 import { Tree, LeafStyle, LeafType } from "./tree";
 
@@ -27,6 +29,26 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+
+// Charger et appliquer HDRI
+const loader = new RGBELoader();
+loader.load('./assets/bg-void.hdr', (texture) => {
+  texture.mapping = THREE.EquirectangularRefractionMapping;
+  scene.environment = texture; // Appliquer l'HDRI comme environnement
+  scene.background = texture;  // Optionnel, pour avoir un fond HDRI
+
+  // Ajuster l'intensité de l'éclairage
+  scene.environment.intensity = 0.5; // Ajuster cette valeur en fonction de la luminosité de l'HDRI
+});
+
+/*loader.load('./assets/bg-hdri.hdr', (texture) => {
+  texture.mapping = THREE.EquirectangularRefractionMapping;
+  scene.environment = texture;
+  scene.background = texture;
+
+  // Ajuster l'intensité de l'éclairage
+  scene.environment.intensity = 0.5; // Ajuster cette valeur en fonction de la luminosité de l'HDRI
+});*/
 
 // ---- CAMERA/LIGHTING -------
 
@@ -96,21 +118,8 @@ const cameraFront = new THREE.PerspectiveCamera(
   0.1,
   1000
 ); //bottom-right droit
-cameraFront.position.set(-10, -10, 15);
-cameraFront.lookAt(0, 33.7, -5);
-
-// Camera Version
-/*const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left gauche
-cameraLeft.position.set(0, 10, 50);
-cameraLeft.lookAt(0, 0, 0);
- 
-const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right millieu
-cameraRight.position.set(10, 20, 10); // Position the camera closer to the scene (centered more)
-cameraRight.lookAt(-5, 0, 0);
- 
-const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right droit
-cameraFront.position.set(10, 0, 10);
-cameraFront.lookAt(-5, 0, 20);*/
+cameraFront.position.set(10, -10.1, 15);
+cameraFront.lookAt(0, 34, -5);
 
 // ---- POST-PROCESSING -------
 
@@ -205,10 +214,8 @@ tree.castShadow = true;
 tree.receiveShadow = true;
 scene.add(tree);
 
-//tree.rotation.x = Math.PI / 2;
-
 // ---- UI -----
-
+/*
 const gui = new GUI();
 gui.add(tree.params, "seed", 0, 65536, 1).name("Seed");
 gui.add(tree.params, "maturity", 0, 1).name("Maturity");
@@ -333,15 +340,14 @@ gui.onChange(() => {
       o.material.needsUpdate = true;
     }
   });
-});
+});*/
 
 // --- RENDER LOOP ------
 
 // Background Void
 
-
-// Create a video element
-const video = document.createElement('video');
+// Bg Video loop
+/*const video = document.createElement('video');
 video.src = './assets/background-loop-v2.mp4'; // Specify the path to your video
 video.load();
 video.play();
@@ -360,11 +366,11 @@ const videoGeometry = new THREE.PlaneGeometry(16, 9); // Adjust the size as need
 const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
 
 // Position the mesh in the scene
-videoMesh.position.set(0, 10, -20); // Adjust the position as needed
-scene.add(videoMesh);
+videoMesh.position.set(0, 10, -5); // Adjust the position as needed
+scene.add(videoMesh);*/
 
-
-/*const loader = new THREE.TextureLoader();
+/*
+const loader = new THREE.TextureLoader();
 loader.load('./assets/bg-void.png', (texture) => {
   scene.background = texture;
 });*/
