@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import RNG from "./rng";
 
-// Chargement de la texture
 const loader = new THREE.TextureLoader();
 
 function loadTexture(path) {
@@ -9,27 +8,13 @@ function loadTexture(path) {
     tex.colorSpace = THREE.SRGBColorSpace;
   });
 }
+const barkTexture = loadTexture(`textures/bark/bark.png`);
 
-const barkTexture = loadTexture("textures/bark/bark.png");
 const leafTextures = [
-  loadTexture("textures/leaves/ash.png"),
-  loadTexture("textures/leaves/aspen.png"),
-  loadTexture("textures/leaves/oak.png"),
+  loadTexture(`textures/leaves/ash.png`),
+  loadTexture(`textures/leaves/aspen.png`),
+  loadTexture(`textures/leaves/oak.png`),
 ];
-
-// Fonction pour appliquer un filtre de couleur à la texture
-function applyColorFilter(texture, color) {
-  // Créer un matériau avec une texture et une couleur
-  const material = new THREE.MeshStandardMaterial({
-    map: texture,
-    color: color,
-  });
-
-  return material;
-}
-
-
-
 
 export const LeafStyle = {
   Single: 0,
@@ -155,7 +140,7 @@ export class Tree extends THREE.Group {
 
     const mat = new THREE.MeshLambertMaterial({
       name: "leaves",
-      color: new THREE.Color().setHSL(0.33, 1, 1), // Apply red color to the leaves
+      color: this.params.leaves.color,
       emissive: this.params.leaves.color,
       emissiveIntensity: this.params.leaves.emissive,
       side: THREE.DoubleSide,
@@ -171,6 +156,13 @@ export class Tree extends THREE.Group {
     this.leavesMesh.material = mat;
     this.leavesMesh.castShadow = true;
     this.leavesMesh.receiveShadow = true;
+  }
+
+  updateLeavesColor(color) {
+    const mat = this.leavesMesh.material;
+    if (mat) {
+      mat.color.set(color); // Mettez à jour la couleur du matériau
+    }
   }
 
   /**

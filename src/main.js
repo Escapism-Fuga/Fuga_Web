@@ -175,7 +175,7 @@ const treeParams = {
     maxCount: 7,
     size: 2,
     sizeVariance: 0,
-    color: 0x6b7f48,
+    color: new THREE.Color().setHSL("", "", ""),
     emissive: 0.02,
     opacity: 1,
     alphaTest: 0.5,
@@ -281,9 +281,8 @@ oscSocket.on("ready", function (msg) {
 
 let hue = 0; // Cible vers laquelle on
 
-let rouge = 0;
-let vert = 0;
-let bleu = 0;
+let vert;
+let bleu;
 
 let lerpSpeed = 0; // Plus lent si la différence est importante
 
@@ -310,15 +309,16 @@ function updateTreeSmooth() {
 
 oscSocket.on("message", function (msg) {
   let address = msg.address;
-
   if (address.startsWith("/encoder")) {
     let firstArgumentValue = msg.args[0].value;
 
-    // Met à jour la cible de la croissance
+    // Augmenter ou diminuer la teinte
     if (firstArgumentValue == 1) {
-      hue += 0.001; // Augmente de 0.01 à chaque fois
+      console.log(hue);
+      hue = hue + 0.01; // Cycle entre 0 et 360°
     } else if (firstArgumentValue == -1) {
-      hue -= 0.001; // Diminue de 0.01
+      console.log(hue);
+      hue = hue - 0.01; // Évite les valeurs négatives
     }
 
     if (hue == 1) {
@@ -329,6 +329,8 @@ oscSocket.on("message", function (msg) {
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.leaves.sizeVariance = firstArgumentValue;
+    // On suppose que la valeur du slider est entre 0 et 1
+
     updateTree();
   }
   if (address.startsWith("/sliderTwo")) {
@@ -338,13 +340,13 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderThree")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.trunk.flare = firstArgumentValue;
+    // treeParams.branch.lengthVariance = firstArgumentValue;
     updateTree();
   }
 
-  if (address.startsWith("/sliderR")) {
+  if (address.startsWith("/sliderSat")) {
     let firstArgumentValue = msg.args[0].value;
-    vert = firstArgumentValue;
+    sat = firstArgumentValue;
   }
   if (address.startsWith("/sliderGrow")) {
     let firstArgumentValue = msg.args[0].value;
@@ -356,9 +358,9 @@ oscSocket.on("message", function (msg) {
 
     updateTreeSmooth();
   }
-  if (address.startsWith("/sliderB")) {
+  if (address.startsWith("/sliderLight")) {
     let firstArgumentValue = msg.args[0].value;
-    bleu = firstArgumentValue / 3;
+    light = firstArgumentValue;
   }
 
   if (address.startsWith("/bouton")) {
@@ -370,16 +372,19 @@ oscSocket.on("message", function (msg) {
     updateTreeSmooth();
   }
 
-  mat.color(hue, vert, bleu);
+  let newColor = new THREE.Color();
+  newColor.setHSL(hue, vert, bleu); // Normalize hue between 0 and 1 (divide by 360)
   treeParams.leaves.color = newColor;
+  tree.updateLeavesColor(newColor);
+
   updateTree();
 });
 
-// Function to update the tree (make sure this works with your tree generation logic)
 function updateTree() {
-  // Regenerate or update the tree based on the new parameters (like trunk length)
-  // Call the tree's generate method to update the geometry
+  tree.leavesMesh.material.color.set(treeParams.leaves.color);
+
   tree.generate();
+  // Re-render or update other properties if necessary
 }
 
 // ON WEBSOCKET CLOSED
