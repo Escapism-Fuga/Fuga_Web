@@ -36,9 +36,6 @@ loader.load('./assets/bg-void.hdr', (texture) => {
   texture.mapping = THREE.EquirectangularRefractionMapping;
   scene.environment = texture; // Appliquer l'HDRI comme environnement
   scene.background = texture;  // Optionnel, pour avoir un fond HDRI
-
-  // Ajuster l'intensité de l'éclairage
-  scene.environment.intensity = 0.5; // Ajuster cette valeur en fonction de la luminosité de l'HDRI
 });
 
 /*loader.load('./assets/bg-hdri.hdr', (texture) => {
@@ -47,8 +44,9 @@ loader.load('./assets/bg-void.hdr', (texture) => {
   scene.background = texture;
 
   // Ajuster l'intensité de l'éclairage
-  scene.environment.intensity = 0.5; // Ajuster cette valeur en fonction de la luminosité de l'HDRI
+  scene.environment.intensity = 0; // Ajuster cette valeur en fonction de la luminosité de l'HDRI
 });*/
+
 
 // ---- CAMERA/LIGHTING -------
 
@@ -118,8 +116,21 @@ const cameraFront = new THREE.PerspectiveCamera(
   0.1,
   1000
 ); //bottom-right droit
-cameraFront.position.set(10, -10.1, 15);
+cameraFront.position.set(-10, -10, 15);
 cameraFront.lookAt(0, 34, -5);
+
+// Camera Version
+/*const cameraLeft = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-left gauche
+cameraLeft.position.set(0, 10, 50);
+cameraLeft.lookAt(0, 0, 0);
+ 
+const cameraRight = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);//top right millieu
+cameraRight.position.set(10, 20, 10); // Position the camera closer to the scene (centered more)
+cameraRight.lookAt(-5, 0, 0);
+ 
+const cameraFront = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); //bottom-right droit
+cameraFront.position.set(10, 0, 10);
+cameraFront.lookAt(-5, 0, 20);*/
 
 // ---- POST-PROCESSING -------
 
@@ -197,7 +208,7 @@ const treeParams = {
     maxCount: 7,
     size: 2,
     sizeVariance: 0,
-    color: 0x6b7f48,
+    color: new THREE.Color().setHSL("", "", ""),
     emissive: 0.02,
     opacity: 1,
     alphaTest: 0.5,
@@ -214,8 +225,10 @@ tree.castShadow = true;
 tree.receiveShadow = true;
 scene.add(tree);
 
+//tree.rotation.x = Math.PI / 2;
+
 // ---- UI -----
-/*
+
 const gui = new GUI();
 gui.add(tree.params, "seed", 0, 65536, 1).name("Seed");
 gui.add(tree.params, "maturity", 0, 1).name("Maturity");
@@ -340,7 +353,7 @@ gui.onChange(() => {
       o.material.needsUpdate = true;
     }
   });
-});*/
+});
 
 // --- RENDER LOOP ------
 
@@ -456,26 +469,50 @@ oscSocket.on("ready", function (msg) {
   console.log("WebSocket Opened on Port " + socketPort + "/tree-js/");
   webSocketConnected = true;
 });
+
 let hue = 0; // Cible vers laquelle on
 
-let rouge = 0;
-let vert = 0;
-let bleu = 0;
+let sat;
+let light;
+
+let lerpSpeed = 0; // Plus lent si la différence est importante
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+let growth = 0;
+let targetGrowth = 0;
+
+function updateTreeSmooth() {
+  // Limiter la vitesse de croissance de l'arbre
+  growth = lerp(growth, targetGrowth, lerpSpeed);
+
+  // Appliquer la maturité à la génération de l'arbre
+  treeParams.maturity = Math.min(1, Math.max(0, growth));
+
+  if (Math.abs(growth - treeParams.maturity) > 0.01) {
+    updateTree(); // Mettre à jour l'arbre
+  }
+
+  requestAnimationFrame(updateTreeSmooth);
+}
 
 oscSocket.on("message", function (msg) {
   let address = msg.address;
-
   if (address.startsWith("/encoder")) {
     let firstArgumentValue = msg.args[0].value;
 
-    // Met à jour la cible de la croissance
+    // Augmenter ou diminuer la teinte
     if (firstArgumentValue == 1) {
-      hue += 1; // Augmente de 0.01 à chaque fois
+      console.log(hue);
+      hue = hue + 0.01; // Cycle entre 0 et 360°
     } else if (firstArgumentValue == -1) {
-      hue -= 1; // Diminue de 0.01
+      console.log(hue);
+      hue = hue - 0.01; // Évite les valeurs négatives
     }
 
-    if (hue == 360) {
+    if (hue == 1) {
       hue = 0;
     }
   }
@@ -483,6 +520,8 @@ oscSocket.on("message", function (msg) {
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.leaves.sizeVariance = firstArgumentValue;
+    // On suppose que la valeur du slider est entre 0 et 1
+
     updateTree();
   }
   if (address.startsWith("/sliderTwo")) {
@@ -492,42 +531,51 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderThree")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.trunk.flare = firstArgumentValue;
+     treeParams.trunk.flare = firstArgumentValue;
     updateTree();
   }
 
-  if (address.startsWith("/sliderR")) {
+  if (address.startsWith("/sliderSat")) {
     let firstArgumentValue = msg.args[0].value;
-    vert = firstArgumentValue;
+    sat = firstArgumentValue;
   }
-  if (address.startsWith("/sliderG")) {
+  if (address.startsWith("/sliderGrow")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.maturity = firstArgumentValue;
+    lerpSpeed = firstArgumentValue / 100000;
+
+    if (firstArgumentValue > 0.5) {
+      targetGrowth = 1;
+    }
+
+    updateTreeSmooth();
   }
-  if (address.startsWith("/sliderB")) {
+  if (address.startsWith("/sliderLight")) {
     let firstArgumentValue = msg.args[0].value;
-    bleu = firstArgumentValue;
+    light = firstArgumentValue;
   }
 
   if (address.startsWith("/bouton")) {
+    growth = 0;
     let random = Math.random();
     let randomSeed = random * 50000;
     treeParams.seed = randomSeed;
-    treeParams.maturity = 0;
     // Call function to update the tree
-    updateTree();
+    updateTreeSmooth();
   }
 
-  let newColor = new THREE.Color(hue, vert, bleu);
+  let newColor = new THREE.Color();
+  newColor.setHSL(hue, sat, light); // Normalize hue between 0 and 1 (divide by 360)
   treeParams.leaves.color = newColor;
+  tree.updateLeavesColor(newColor);
+
   updateTree();
 });
 
-// Function to update the tree (make sure this works with your tree generation logic)
 function updateTree() {
-  // Regenerate or update the tree based on the new parameters (like trunk length)
-  // Call the tree's generate method to update the geometry
+  tree.leavesMesh.material.color.set(treeParams.leaves.color);
+
   tree.generate();
+  // Re-render or update other properties if necessary
 }
 
 // ON WEBSOCKET CLOSED
