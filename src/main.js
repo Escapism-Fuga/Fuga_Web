@@ -367,11 +367,7 @@ oscSocket.on("message", function (msg) {
     let randomSeed = random * 50000;
     treeParams.seed = randomSeed;
     // Call function to update the tree
-<<<<<<< Updated upstream
     updateTreeSmooth();
-=======
-    updateTree();
->>>>>>> Stashed changes
   }
 
   let newColor = new THREE.Color(hue, vert, bleu);
