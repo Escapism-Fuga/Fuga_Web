@@ -281,8 +281,8 @@ oscSocket.on("ready", function (msg) {
 
 let hue = 0; // Cible vers laquelle on
 
-let vert;
-let bleu;
+let sat;
+let light;
 
 let lerpSpeed = 0; // Plus lent si la différence est importante
 
@@ -340,7 +340,7 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderThree")) {
     let firstArgumentValue = msg.args[0].value;
-    // treeParams.branch.lengthVariance = firstArgumentValue;
+     treeParams.trunk.flare = firstArgumentValue;
     updateTree();
   }
 
@@ -373,7 +373,7 @@ oscSocket.on("message", function (msg) {
   }
 
   let newColor = new THREE.Color();
-  newColor.setHSL(hue, vert, bleu); // Normalize hue between 0 and 1 (divide by 360)
+  newColor.setHSL(hue, sat, light); // Normalize hue between 0 and 1 (divide by 360)
   treeParams.leaves.color = newColor;
   tree.updateLeavesColor(newColor);
 
