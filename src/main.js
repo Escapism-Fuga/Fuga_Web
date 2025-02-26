@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import Stats from "three/examples/jsm/libs/stats.module";
-import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -117,7 +116,7 @@ const cameraFront = new THREE.PerspectiveCamera(
   0.1,
   1000
 ); //bottom-right droit
-cameraFront.position.set(-10, -10, 15);
+cameraFront.position.set(-20, -10, 15);
 cameraFront.lookAt(0, 34, -5);
 
 // Camera Version
@@ -538,7 +537,7 @@ oscSocket.on("message", function (msg) {
 
   if (address.startsWith("/sliderSat")) {
     let firstArgumentValue = msg.args[0].value;
-    saturation = Math.max(0, Math.min(1, firstArgumentValue));
+    saturation = Math.max(0.5, Math.min(1, firstArgumentValue));
   }
   if (address.startsWith("/sliderGrow")) {
     let firstArgumentValue = msg.args[0].value;
@@ -552,7 +551,7 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderLight")) {
     let firstArgumentValue = msg.args[0].value;
-    light = Math.max(0, Math.min(1, firstArgumentValue));
+    light = Math.max(0.25, Math.min(0.5, firstArgumentValue));
   }
 
   if (address.startsWith("/sliderBloom")) {
@@ -563,15 +562,15 @@ oscSocket.on("message", function (msg) {
   if (address.startsWith("/bouton")) {
     let firstArgumentValue = msg.args[0].value;
     if (firstArgumentValue == 1) {
-
+      
       growth = 0;
       let random = Math.random();
       let randomSeed = random * 50000;
       treeParams.seed = randomSeed;
+      console.log(targetGrowth);
       // Call function to update the tree
 
-      window.location.reload();
-      updateTreeSmooth();
+      updateTree();
     }
   }
 
