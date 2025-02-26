@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import Stats from "three/examples/jsm/libs/stats.module";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -9,7 +10,7 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+
 
 
 import { Tree, LeafStyle, LeafType } from "./tree";
@@ -162,7 +163,7 @@ composer.addPass(fxaaPass);
 
 const treeParams = {
   seed: 0,
-  maturity: 1,
+  maturity: 0,
   animateGrowth: false,
 
   trunk: {
@@ -170,7 +171,7 @@ const treeParams = {
     flatShading: false, // Use face normals for shading instead of vertex normals
     textured: true, // Apply texture to bark
     length: 20, // Length of the trunk
-    radius: 1.5, // Starting radius of the trunk
+    radius: 3.5, // Starting radius of the trunk
     flare: 1.0, // Multipler for base of trunk
   },
 
@@ -228,7 +229,7 @@ scene.add(tree);
 //tree.rotation.x = Math.PI / 2;
 
 // ---- UI -----
-
+/*
 const gui = new GUI();
 gui.add(tree.params, "seed", 0, 65536, 1).name("Seed");
 gui.add(tree.params, "maturity", 0, 1).name("Maturity");
@@ -353,7 +354,7 @@ gui.onChange(() => {
       o.material.needsUpdate = true;
     }
   });
-});
+}); */
 
 // --- RENDER LOOP ------
 
@@ -472,7 +473,7 @@ oscSocket.on("ready", function (msg) {
 
 let hue = 0; // Cible vers laquelle on
 
-let sat;
+let saturation;
 let light;
 
 let lerpSpeed = 0; // Plus lent si la différence est importante
@@ -519,14 +520,14 @@ oscSocket.on("message", function (msg) {
 
   if (address.startsWith("/sliderOne")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.leaves.sizeVariance = firstArgumentValue;
+    treeParams.leaves.sizeVariance = firstArgumentValue / 3 ;
     // On suppose que la valeur du slider est entre 0 et 1
 
     updateTree();
   }
   if (address.startsWith("/sliderTwo")) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.lengthVariance = firstArgumentValue;
+    treeParams.branch.lengthVariance = firstArgumentValue / 5;
     updateTree();
   }
   if (address.startsWith("/sliderThree")) {
@@ -537,7 +538,7 @@ oscSocket.on("message", function (msg) {
 
   if (address.startsWith("/sliderSat")) {
     let firstArgumentValue = msg.args[0].value;
-    sat = firstArgumentValue;
+    saturation = Math.max(0, Math.min(1, firstArgumentValue));
   }
   if (address.startsWith("/sliderGrow")) {
     let firstArgumentValue = msg.args[0].value;
@@ -551,23 +552,33 @@ oscSocket.on("message", function (msg) {
   }
   if (address.startsWith("/sliderLight")) {
     let firstArgumentValue = msg.args[0].value;
-    light = firstArgumentValue;
+    light = Math.max(0, Math.min(1, firstArgumentValue));
+  }
+
+  if (address.startsWith("/sliderBloom")) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.branch.twist = firstArgumentValue;
   }
 
   if (address.startsWith("/bouton")) {
-    growth = 0;
-    let random = Math.random();
-    let randomSeed = random * 50000;
-    treeParams.seed = randomSeed;
-    // Call function to update the tree
-    updateTreeSmooth();
+    let firstArgumentValue = msg.args[0].value;
+    if (firstArgumentValue == 1) {
+
+      growth = 0;
+      let random = Math.random();
+      let randomSeed = random * 50000;
+      treeParams.seed = randomSeed;
+      // Call function to update the tree
+
+      window.location.reload();
+      updateTreeSmooth();
+    }
   }
 
   let newColor = new THREE.Color();
-  newColor.setHSL(hue, sat, light); // Normalize hue between 0 and 1 (divide by 360)
+  newColor.setHSL(hue, saturation, light); // Normalize hue between 0 and 1 (divide by 360)
   treeParams.leaves.color = newColor;
   tree.updateLeavesColor(newColor);
-
   updateTree();
 });
 
