@@ -10,6 +10,8 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { Tree, LeafStyle, LeafType } from "./tree";
+
+
 const urlParams = new URLSearchParams(window.location.search);
 let iteration = urlParams.get('iteration');
 
@@ -187,6 +189,8 @@ function animate() {
     tree.params.maturity = Math.min(1, tree.params.maturity + 0.2 * dt);
     tree.generate();
   }
+
+  
 
   // Rendu principal
   composer.render();
