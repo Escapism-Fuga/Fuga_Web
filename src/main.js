@@ -110,6 +110,9 @@ fxaaPass.material.uniforms["resolution"].value.y =
   1 / (renderer.domElement.offsetHeight * pixelRatio);
 composer.addPass(fxaaPass);
 
+
+let lastTreeUpdateTime = Date.now();
+
 // ----- TREE -----------
 
 const treeParams = {
@@ -190,7 +193,13 @@ function animate() {
     tree.generate();
   }
 
-  
+  let currentTime = Date.now(); // Get current time
+  let deltaTime = currentTime - lastTreeUpdateTime; // Calculate delta time (in milliseconds)
+
+  if ( deltaTime > 50 ) {
+    updateTree();
+    lastTreeUpdateTime = currentTime;
+  }
 
   // Rendu principal
   composer.render();
@@ -242,7 +251,7 @@ function updateTreeSmooth() {
   treeParams.maturity = Math.min(1, Math.max(0, growth));
 
   if (Math.abs(growth - treeParams.maturity) > 0.01) {
-    updateTree(); // Mettre à jour l'arbre
+     // Mettre à jour l'arbre
   }
 
   requestAnimationFrame(updateTreeSmooth);
@@ -251,7 +260,7 @@ function updateTreeSmooth() {
 oscSocket.on("message", function (msg) {
   let address = msg.address;
   
-  if (address.startsWith("/encoder")) {
+  if (address.startsWith("/encoder" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
 
     // Augmenter ou diminuer la teinte
@@ -270,25 +279,25 @@ oscSocket.on("message", function (msg) {
   }
 
 
-  if (address.startsWith("/sliderOne")) {
+  if (address.startsWith("/sliderOne"+ iteration)) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.leaves.sizeVariance = firstArgumentValue / 3 ;
     // On suppose que la valeur du slider est entre 0 et 1
-    updateTree();
+    
 
   }
-  if (address.startsWith("/sliderTwo")) {
+  if (address.startsWith("/sliderTwo"+ iteration)) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.branch.lengthVariance = firstArgumentValue / 5;
-    updateTree();
+    
   }
-  if (address.startsWith("/sliderThree")) {
+  if (address.startsWith("/sliderThree"+ iteration)) {
     let firstArgumentValue = msg.args[0].value;
      treeParams.trunk.flare = firstArgumentValue;
-     updateTree();
+     
   }
 
-  if (address.startsWith("/sliderSat")) {
+  if (address.startsWith("/sliderSat"+ iteration)) {
     let firstArgumentValue = msg.args[0].value;
     saturation = Math.max(0.25, Math.min(0.75, firstArgumentValue));
   }
@@ -304,16 +313,16 @@ oscSocket.on("message", function (msg) {
     updateTreeSmooth();
   }
   
-  if (address.startsWith("/sliderLight")) {
+  if (address.startsWith("/sliderLight"+ iteration)) {
     let firstArgumentValue = msg.args[0].value;
     light = Math.max(0.25, Math.min(0.75, firstArgumentValue));
     
   }
 
-  if (address.startsWith("/sliderBloom")) {
+  if (address.startsWith("/sliderBloom"+ iteration)) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.branch.twist = firstArgumentValue;
-    updateTree();
+    
   }
 
   if (address.startsWith("/bouton")) {
@@ -326,7 +335,7 @@ oscSocket.on("message", function (msg) {
       treeParams.seed = randomSeed;
       console.log(targetGrowth);
       // Call function to update the tree
-      updateTree();
+      
     }
   }
 
@@ -334,7 +343,7 @@ oscSocket.on("message", function (msg) {
   newColor.setHSL(hue, saturation, light); // Normalize hue between 0 and 1 (divide by 360)
   treeParams.leaves.color = newColor;
   tree.updateLeavesColor(newColor);
-  updateTree();
+  
 });
 
 function updateTree() {
