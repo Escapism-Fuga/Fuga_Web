@@ -218,8 +218,8 @@ oscSocket.on("ready", function (msg) {
 
 let hue = 0; // Cible vers laquelle on
 
-let saturation = 0.5;
-let light = 0.5;
+let saturation = 0;
+let light = 0;
 
 let lerpSpeed = 0; // Plus lent si la différence est importante
 
@@ -248,7 +248,6 @@ oscSocket.on("message", function (msg) {
   let address = msg.address;
   
   if (address.startsWith("/encoder")) {
-    console.log(iteration);
     let firstArgumentValue = msg.args[0].value;
 
     // Augmenter ou diminuer la teinte
@@ -287,7 +286,7 @@ oscSocket.on("message", function (msg) {
 
   if (address.startsWith("/sliderSat")) {
     let firstArgumentValue = msg.args[0].value;
-    saturation = firstArgumentValue;
+    saturation = Math.max(0.25, Math.min(0.75, firstArgumentValue));
   }
   
   if (address.startsWith("/sliderGrow")) {
@@ -303,7 +302,8 @@ oscSocket.on("message", function (msg) {
   
   if (address.startsWith("/sliderLight")) {
     let firstArgumentValue = msg.args[0].value;
-    light = firstArgumentValue;
+    light = Math.max(0.25, Math.min(0.75, firstArgumentValue));
+    
   }
 
   if (address.startsWith("/sliderBloom")) {
