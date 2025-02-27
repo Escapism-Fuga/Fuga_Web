@@ -1,15 +1,37 @@
 import * as THREE from "three";
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import {
+  RGBELoader
+} from 'three/examples/jsm/loaders/RGBELoader.js';
 import Stats from "three/examples/jsm/libs/stats.module";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
-import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
-import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
-import { Tree, LeafStyle, LeafType } from "./tree";
+import {
+  OrbitControls
+} from "three/addons/controls/OrbitControls.js";
+import {
+  EffectComposer
+} from "three/addons/postprocessing/EffectComposer.js";
+import {
+  RenderPass
+} from "three/addons/postprocessing/RenderPass.js";
+import {
+  FXAAShader
+} from "three/addons/shaders/FXAAShader.js";
+import {
+  UnrealBloomPass
+} from "three/addons/postprocessing/UnrealBloomPass.js";
+import {
+  OutputPass
+} from "three/addons/postprocessing/OutputPass.js";
+import {
+  ShaderPass
+} from "three/addons/postprocessing/ShaderPass.js";
+import {
+  GLTFExporter
+} from "three/addons/exporters/GLTFExporter.js";
+import {
+  Tree,
+  LeafStyle,
+  LeafType
+} from "./tree";
 
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -36,7 +58,7 @@ const loader = new RGBELoader();
 loader.load('./assets/bg-void.hdr', (texture) => {
   texture.mapping = THREE.EquirectangularRefractionMapping;
   scene.environment = texture; // Appliquer l'HDRI comme environnement
-  scene.background = texture;  // Optionnel, pour avoir un fond HDRI
+  scene.background = texture; // Optionnel, pour avoir un fond HDRI
 });
 
 loader.load('./assets/bg-hdri.hdr', (texture) => {
@@ -196,7 +218,7 @@ function animate() {
   let currentTime = Date.now(); // Get current time
   let deltaTime = currentTime - lastTreeUpdateTime; // Calculate delta time (in milliseconds)
 
-  if ( deltaTime > 50 ) {
+  if (deltaTime > 50) {
     updateTree();
     lastTreeUpdateTime = currentTime;
   }
@@ -229,6 +251,10 @@ oscSocket.on("ready", function (msg) {
   webSocketConnected = true;
 });
 
+
+// Track whether the encoder is moving
+
+
 let hue = 0; // Cible vers laquelle on
 
 let saturation = 0;
@@ -251,7 +277,9 @@ function updateTreeSmooth() {
   treeParams.maturity = Math.min(1, Math.max(0, growth));
 
   if (Math.abs(growth - treeParams.maturity) > 0.01) {
-     // Mettre à jour l'arbre
+    // Mettre à jour l'arbre
+    tree.generate();
+
   }
 
   requestAnimationFrame(updateTreeSmooth);
@@ -259,91 +287,112 @@ function updateTreeSmooth() {
 
 oscSocket.on("message", function (msg) {
   let address = msg.address;
-  
+
+  if (address.startsWith("/sliderOne" + iteration)) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.leaves.sizeVariance = firstArgumentValue / 3;
+    // On suppose que la valeur du slider est entre 0 et 1
+    treeParams.leaves.emissive = firstArgumentValue / 3;
+    treeParams.sun.strength = firstArgumentValue / 30;
+
+  }
+  if (address.startsWith("/sliderTwo" + iteration)) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.branch.lengthVariance = firstArgumentValue / 8.23;
+    treeParams.geometry.lengthVariance = firstArgumentValue / 5;
+  }
+  if (address.startsWith("/sliderThree" + iteration)) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.trunk.flare = firstArgumentValue;
+    treeParams.branch.twist = firstArgumentValue;
+    treeParams.branch.taper = 0.5 + firstArgumentValue / 6;
+  }
+
+  if (address.startsWith("/sliderSat" + iteration)) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.leaves.sizeVariance = firstArgumentValue * 2;
+    treeParams.branch.lengthVariance = firstArgumentValue / 3;
+    treeParams.branch.taper = 0.5 + firstArgumentValue / 6;
+  }
+
+  if (address.startsWith("/sliderLight" + iteration)) {
+    let firstArgumentValue = msg.args[0].value;
+    treeParams.branch.twist = firstArgumentValue / 10;
+    treeParams.sun.strength = firstArgumentValue / 50;
+    treeParams.geometry.lengthVariance = firstArgumentValue / 10;
+  }
   if (address.startsWith("/encoder" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-
-    // Augmenter ou diminuer la teinte
-    if (firstArgumentValue == 1) {
-      console.log(hue);
-      hue = hue + 0.01; // Cycle entre 0 et 360°
-
-    } else if (firstArgumentValue == -1) {
-      console.log(hue);
-      hue = hue - 0.01; // Évite les valeurs négatives
-    }
-
-    if (hue == 1) {
-      hue = 0;
-    }
-  }
-
-
-  if (address.startsWith("/sliderOne"+ iteration)) {
-    let firstArgumentValue = msg.args[0].value;
-    treeParams.leaves.sizeVariance = firstArgumentValue / 3 ;
-    // On suppose que la valeur du slider est entre 0 et 1
+    let lastArgument;
     
-
-  }
-  if (address.startsWith("/sliderTwo"+ iteration)) {
-    let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.lengthVariance = firstArgumentValue / 5;
-    
-  }
-  if (address.startsWith("/sliderThree"+ iteration)) {
-    let firstArgumentValue = msg.args[0].value;
-     treeParams.trunk.flare = firstArgumentValue;
-     
-  }
-
-  if (address.startsWith("/sliderSat"+ iteration)) {
-    let firstArgumentValue = msg.args[0].value;
-    saturation = Math.max(0.25, Math.min(0.75, firstArgumentValue));
-  }
-  
-  if (address.startsWith("/sliderGrow")) {
-    let firstArgumentValue = msg.args[0].value;
-    lerpSpeed = firstArgumentValue / 1000;
-
-    if (firstArgumentValue > 0.5) {
+    // Check if the value has changed (encoder is moving)
+    if (firstArgumentValue != lastArgument) {
       targetGrowth = 1;
+
+      if (firstArgumentValue === 1) {
+        treeParams.geometry.randomization += 0.1;
+        treeParams.trunk.length += 0.1;
+        treeParams.branch.gnarliness += 0.01;
+      } else if (firstArgumentValue === -1) {
+        treeParams.geometry.randomization -= 0.1;
+        treeParams.trunk.length -= 0.1;
+        treeParams.branch.gnarliness -= 0.01;
+      }
+
+
+      lerpSpeed += 0.001;
+      updateTreeSmooth();
+
+      setInterval(function () {
+        if (lerpSpeed > 0 ) {
+          lerpSpeed = 0;
+          growth -= 0.000001;
+          updateTreeSmooth();
+          console.log(growth);
+        }
+      }, 5000); // 2000 milliseconds = 2 seconds
+      
+    } 
+  lastArgument = firstArgumentValue;
+  }
+
+  /*
+    if (address.startsWith("/sliderGrow")) {
+      let firstArgumentValue = msg.args[0].value;
+      lerpSpeed = firstArgumentValue / 1000;
+
+      if (firstArgumentValue > 0.5) {
+        targetGrowth = 1;
+      }
+
+      updateTreeSmooth();
     }
-
-    updateTreeSmooth();
-  }
-  
-  if (address.startsWith("/sliderLight"+ iteration)) {
-    let firstArgumentValue = msg.args[0].value;
-    light = Math.max(0.25, Math.min(0.75, firstArgumentValue));
-    
-  }
-
-  if (address.startsWith("/sliderBloom"+ iteration)) {
+  */
+  if (address.startsWith("/sliderBloom" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
     treeParams.branch.twist = firstArgumentValue;
-    
+
   }
 
   if (address.startsWith("/bouton")) {
     let firstArgumentValue = msg.args[0].value;
     if (firstArgumentValue == 1) {
-      
+
       growth = 0;
       let random = Math.random();
       let randomSeed = random * 50000;
       treeParams.seed = randomSeed;
       console.log(targetGrowth);
       // Call function to update the tree
-      
+
     }
   }
 
   let newColor = new THREE.Color();
-  newColor.setHSL(hue, saturation, light); // Normalize hue between 0 and 1 (divide by 360)
+  newColor.setHSL(1, 1, 0.5); // Normalize hue between 0 and 1 (divide by 360)
   treeParams.leaves.color = newColor;
   tree.updateLeavesColor(newColor);
-  
+
 });
 
 function updateTree() {
