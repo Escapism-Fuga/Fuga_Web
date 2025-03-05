@@ -137,8 +137,11 @@ let lastTreeUpdateTime = Date.now();
 
 // ----- TREE -----------
 
+let random = Math.random();
+let randomSeed = random * 50000;
+
 const treeParams = {
-  seed: 0,
+  seed: randomSeed,
   maturity: 0,
   animateGrowth: false,
 
@@ -315,7 +318,7 @@ function grow() {
     isDying = true;
     isGrowing = false;
     die();
-  }, 10000);
+  }, 20000);
 }
 
 function die() {
@@ -330,6 +333,7 @@ function die() {
       if (growth <= 0) {
         console.log("dead");
         isDying = false; // Réinitialiser isDying une fois que l'on est "mort"
+        window.location.reload();
       }
     }
     }, 50); // 50 millisecondes = 0.05 secondes
@@ -350,12 +354,25 @@ oscSocket.on("message", function (msg) {
     treeParams.leaves.emissive = roundedValue / 3;
     treeParams.sun.strength = roundedValue / 30;
 
+    if (roundedValue - lastArgumentOne >= 0.1 || roundedValue - lastArgumentOne <= -0.1) {
+      targetGrowth = 1;
+      lastArgumentOne = roundedValue;
+
+      grow();
+    }
   }
   if (address.startsWith("/sliderTwo" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
     let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
     treeParams.branch.lengthVariance = roundedValue / 8.23;
     treeParams.geometry.lengthVariance = roundedValue / 5;
+
+    if (roundedValue - lastArgumentTwo >= 0.1 || roundedValue - lastArgumentTwo <= -0.1) {
+      targetGrowth = 1;
+      lastArgumentTwo = roundedValue;
+
+      grow();
+    }
   }
   if (address.startsWith("/sliderThree" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
@@ -363,6 +380,13 @@ oscSocket.on("message", function (msg) {
     treeParams.trunk.flare = roundedValue;
     treeParams.branch.twist = roundedValue;
     treeParams.branch.taper = 0.5 + roundedValue / 6;
+
+    if (roundedValue - lastArgumentThree >= 0.1 || roundedValue - lastArgumentThree <= -0.1) {
+      targetGrowth = 1;
+      lastArgumentThree = roundedValue;
+
+      grow();
+    }
   }
 
   if (address.startsWith("/sliderSat" + iteration)) {
@@ -460,9 +484,21 @@ oscSocket.on("message", function (msg) {
   }
 
   let newColor = new THREE.Color();
-  newColor.setHSL(1, 1, 0.5); // Normalize hue between 0 and 1 (divide by 360)
-  treeParams.leaves.color = newColor;
-  tree.updateLeavesColor(newColor);
+  console.log("hue :" + hue);
+  function updateColor() {
+    hue += 1 / 100000;
+    
+    if (hue > 1) {
+      hue = 0;
+    }
+    
+    newColor.setHSL(hue, 1, 0.5);
+    
+    treeParams.leaves.color = newColor;
+    tree.updateLeavesColor(newColor);
+  }
+  
+  setInterval(updateColor, 50);
 
 });
 
