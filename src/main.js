@@ -269,6 +269,18 @@ function lerp(a, b, t) {
 let growth = 0;
 let targetGrowth = 0;
 
+let lastArgumentSat = 0;
+let lastArgumentLight = 0;
+let lastArgumentEncoder = 0;
+let lastArgumentOne = 0;
+let lastArgumentTwo = 0;
+let lastArgumentThree = 0;
+let lastArgumentGrow = 0;
+let lastArgumentReset = 0;
+let lastArgumentBloom = 0;
+
+
+
 function updateTreeSmooth() {
   // Limiter la vitesse de croissance de l'arbre
   growth = lerp(growth, targetGrowth, lerpSpeed);
@@ -285,83 +297,140 @@ function updateTreeSmooth() {
   requestAnimationFrame(updateTreeSmooth);
 }
 
+let isDying = false;  // Variable pour savoir si la fonction die est déjà en cours d'exécution
+let isGrowing = false; // Variable pour savoir si la fonction grow est en cours d'exécution
+
+
+function grow() {
+  
+  isGrowing = true; // Marquer que grow est en cours
+  isDying = false;
+  targetGrowth = 1;
+  lerpSpeed += 0.00001;
+  updateTreeSmooth();
+
+  console.log("growing");
+
+  setTimeout(function () {
+    isDying = true;
+    isGrowing = false;
+    die();
+  }, 10000);
+}
+
+function die() {
+    setInterval(function () {
+      if (isDying) {
+      lerpSpeed = 0;
+      growth -= 0.0001;
+      targetGrowth = 0;
+      updateTreeSmooth();
+      console.log("dying");
+
+      if (growth <= 0) {
+        console.log("dead");
+        isDying = false; // Réinitialiser isDying une fois que l'on est "mort"
+      }
+    }
+    }, 50); // 50 millisecondes = 0.05 secondes
+  
+}
+
+
 oscSocket.on("message", function (msg) {
   let address = msg.address;
 
   if (address.startsWith("/sliderOne" + iteration)) {
+
     let firstArgumentValue = msg.args[0].value;
-    treeParams.leaves.sizeVariance = firstArgumentValue / 3;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+
+    treeParams.leaves.sizeVariance = roundedValue / 3;
     // On suppose que la valeur du slider est entre 0 et 1
-    treeParams.leaves.emissive = firstArgumentValue / 3;
-    treeParams.sun.strength = firstArgumentValue / 30;
+    treeParams.leaves.emissive = roundedValue / 3;
+    treeParams.sun.strength = roundedValue / 30;
 
   }
   if (address.startsWith("/sliderTwo" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.lengthVariance = firstArgumentValue / 8.23;
-    treeParams.geometry.lengthVariance = firstArgumentValue / 5;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    treeParams.branch.lengthVariance = roundedValue / 8.23;
+    treeParams.geometry.lengthVariance = roundedValue / 5;
   }
   if (address.startsWith("/sliderThree" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.trunk.flare = firstArgumentValue;
-    treeParams.branch.twist = firstArgumentValue;
-    treeParams.branch.taper = 0.5 + firstArgumentValue / 6;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    treeParams.trunk.flare = roundedValue;
+    treeParams.branch.twist = roundedValue;
+    treeParams.branch.taper = 0.5 + roundedValue / 6;
   }
 
   if (address.startsWith("/sliderSat" + iteration)) {
+
     let firstArgumentValue = msg.args[0].value;
-    treeParams.leaves.sizeVariance = firstArgumentValue * 2;
-    treeParams.branch.lengthVariance = firstArgumentValue / 3;
-    treeParams.branch.taper = 0.5 + firstArgumentValue / 6;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+
+    treeParams.leaves.sizeVariance = roundedValue * 2;
+    treeParams.branch.lengthVariance = roundedValue / 3;
+    treeParams.branch.taper = 0.5 + roundedValue / 6;
+
+    // Check if the value has changed (encoder is moving)
+    if (roundedValue - lastArgumentSat >= 0.1 || roundedValue - lastArgumentSat <= -0.1) {
+      targetGrowth = 1;
+      lastArgumentSat = roundedValue;
+
+      grow();
+    }
   }
 
   if (address.startsWith("/sliderLight" + iteration)) {
+
     let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.twist = firstArgumentValue / 10;
-    treeParams.sun.strength = firstArgumentValue / 50;
-    treeParams.geometry.lengthVariance = firstArgumentValue / 10;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+
+
+    treeParams.branch.twist = roundedValue / 10;
+    treeParams.sun.strength = roundedValue / 50;
+    treeParams.geometry.lengthVariance = roundedValue / 10;
+
+    // Check if the value has changed (encoder is moving)
+    if (roundedValue - lastArgumentLight >= 0.1 || roundedValue - lastArgumentLight <= -0.1) {
+      targetGrowth = 1;
+      lastArgumentLight = roundedValue;
+
+      grow();
+    }
   }
   if (address.startsWith("/encoder" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-    let lastArgument;
-    
+
     // Check if the value has changed (encoder is moving)
-    if (firstArgumentValue != lastArgument) {
+    if (firstArgumentValue != lastArgumentEncoder) {
       targetGrowth = 1;
+      grow();
+
 
       if (firstArgumentValue === 1) {
         treeParams.geometry.randomization += 0.1;
         treeParams.trunk.length += 0.1;
         treeParams.branch.gnarliness += 0.01;
-      } else if (firstArgumentValue === -1) {
+      } else if (roundedValue === -1) {
         treeParams.geometry.randomization -= 0.1;
         treeParams.trunk.length -= 0.1;
         treeParams.branch.gnarliness -= 0.01;
       }
 
+      lastArgumentEncoder = firstArgumentValue;
+    }
 
-      lerpSpeed += 0.001;
-      updateTreeSmooth();
-
-      setInterval(function () {
-        if (lerpSpeed > 0 ) {
-          lerpSpeed = 0;
-          growth -= 0.000001;
-          updateTreeSmooth();
-          console.log(growth);
-        }
-      }, 5000); // 2000 milliseconds = 2 seconds
-      
-    } 
-  lastArgument = firstArgumentValue;
   }
 
   /*
     if (address.startsWith("/sliderGrow")) {
-      let firstArgumentValue = msg.args[0].value;
-      lerpSpeed = firstArgumentValue / 1000;
+      let roundedValue = msg.args[0].value;
+      lerpSpeed = roundedValue / 1000;
 
-      if (firstArgumentValue > 0.5) {
+      if (roundedValue > 0.5) {
         targetGrowth = 1;
       }
 
@@ -370,13 +439,15 @@ oscSocket.on("message", function (msg) {
   */
   if (address.startsWith("/sliderBloom" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-    treeParams.branch.twist = firstArgumentValue;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    treeParams.branch.twist = roundedValue;
 
   }
 
   if (address.startsWith("/bouton")) {
     let firstArgumentValue = msg.args[0].value;
-    if (firstArgumentValue == 1) {
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    if (roundedValue == 1) {
 
       growth = 0;
       let random = Math.random();
