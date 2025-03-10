@@ -300,12 +300,12 @@ function updateTreeSmooth() {
   requestAnimationFrame(updateTreeSmooth);
 }
 
-let isDying = false;  // Variable pour savoir si la fonction die est déjà en cours d'exécution
+let isDying = false; // Variable pour savoir si la fonction die est déjà en cours d'exécution
 let isGrowing = false; // Variable pour savoir si la fonction grow est en cours d'exécution
 
 
 function grow() {
-  
+
   isGrowing = true; // Marquer que grow est en cours
   isDying = false;
   targetGrowth = 1;
@@ -322,13 +322,14 @@ function grow() {
 }
 
 function die() {
-    setInterval(function () {
-      if (isDying) {
+  setInterval(function () {
+    if (isDying) {
       lerpSpeed = 0;
       growth -= 0.0001;
       targetGrowth = 0;
       updateTreeSmooth();
       console.log("dying");
+      console.log(growth);
 
       if (growth <= 0) {
         console.log("dead");
@@ -336,8 +337,8 @@ function die() {
         window.location.reload();
       }
     }
-    }, 50); // 50 millisecondes = 0.05 secondes
-  
+  }, 50); // 50 millisecondes = 0.05 secondes
+
 }
 
 
@@ -351,7 +352,6 @@ oscSocket.on("message", function (msg) {
 
     treeParams.leaves.sizeVariance = roundedValue / 3;
     // On suppose que la valeur du slider est entre 0 et 1
-    treeParams.leaves.emissive = roundedValue / 3;
     treeParams.sun.strength = roundedValue / 30;
 
     if (roundedValue - lastArgumentOne >= 0.1 || roundedValue - lastArgumentOne <= -0.1) {
@@ -387,6 +387,39 @@ oscSocket.on("message", function (msg) {
 
       grow();
     }
+  }
+
+  if (address.startsWith("/sliderA" + iteration)) {
+
+    let firstArgumentValue = msg.args[0].value;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+
+    treeParams.leaves.sizeVariance = roundedValue / 3;
+    treeParams.branch.lengthVariance = roundedValue / 8.23;
+
+  }
+  if (address.startsWith("/sliderB" + iteration)) {
+    let firstArgumentValue = msg.args[0].value;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
+    let invertedValue = 1 - (roundedValue / 5);
+    
+    // Mettre à jour le paramètre emissive en fonction de la valeur inversée
+    treeParams.leaves.emissive = invertedValue / 2;
+
+    if (roundedValue < 1.5) {
+      targetGrowth = 1;
+      lastArgumentTwo = roundedValue;
+
+      grow();
+    }
+  }
+  if (address.startsWith("/sliderC" + iteration)) {
+    let firstArgumentValue = msg.args[0].value;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    treeParams.trunk.flare = roundedValue;
+
+    treeParams.geometry.lengthVariance = roundedValue / 5;
+
   }
 
   if (address.startsWith("/sliderSat" + iteration)) {
@@ -484,20 +517,20 @@ oscSocket.on("message", function (msg) {
   }
 
   let newColor = new THREE.Color();
-  console.log("hue :" + hue);
+
   function updateColor() {
     hue += 1 / 100000;
-    
+
     if (hue > 1) {
       hue = 0;
     }
-    
+
     newColor.setHSL(hue, 1, 0.5);
-    
+
     treeParams.leaves.color = newColor;
     tree.updateLeavesColor(newColor);
   }
-  
+
   setInterval(updateColor, 50);
 
 });
