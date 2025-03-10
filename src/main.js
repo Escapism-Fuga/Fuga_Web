@@ -103,7 +103,7 @@ const camera = new THREE.PerspectiveCamera(
 );
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 20, 0);
-camera.position.set(70, 20, 0);
+camera.position.set(50, 20, 0);
 
 
 // ---- POST-PROCESSING -------
@@ -305,7 +305,6 @@ let isGrowing = false; // Variable pour savoir si la fonction grow est en cours 
 
 
 function grow() {
-
   isGrowing = true; // Marquer que grow est en cours
   isDying = false;
   targetGrowth = 1;
@@ -318,8 +317,8 @@ function grow() {
     isDying = true;
     isGrowing = false;
     die();
-  }, 20000);
-}
+  }, 60000);
+};
 
 function die() {
   setInterval(function () {
@@ -337,7 +336,7 @@ function die() {
         window.location.reload();
       }
     }
-  }, 50); // 50 millisecondes = 0.05 secondes
+  }, 100); // 50 millisecondes = 0.05 secondes
 
 }
 
@@ -402,7 +401,7 @@ oscSocket.on("message", function (msg) {
     let firstArgumentValue = msg.args[0].value;
     let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
     let invertedValue = 1 - (roundedValue / 5);
-    
+
     // Mettre à jour le paramètre emissive en fonction de la valeur inversée
     treeParams.leaves.emissive = invertedValue / 2;
 
@@ -519,7 +518,7 @@ oscSocket.on("message", function (msg) {
   let newColor = new THREE.Color();
 
   function updateColor() {
-    hue += 1 / 100000;
+    hue += 1 / 10000000;
 
     if (hue > 1) {
       hue = 0;
