@@ -44,8 +44,8 @@ const exporter = new GLTFExporter();
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setClearColor(0);
+const renderer = new THREE.WebGLRenderer({alpha: true});
+renderer.setClearColor(0x000000, 0);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -53,32 +53,15 @@ document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 
-// Charger et appliquer HDRI
-const loader = new RGBELoader();
-loader.load('./assets/bg-void.hdr', (texture) => {
-  texture.mapping = THREE.EquirectangularRefractionMapping;
-  scene.environment = texture; // Appliquer l'HDRI comme environnement
-  scene.background = texture; // Optionnel, pour avoir un fond HDRI
-});
-
-loader.load('./assets/bg-hdri.hdr', (texture) => {
-  texture.mapping = THREE.EquirectangularRefractionMapping;
-  scene.environment = texture;
-  scene.background = texture;
-
-  // Ajuster l'intensité de l'éclairage
-  scene.environment.intensity = 0; // Ajuster cette valeur en fonction de la luminosité de l'HDRI
-});
-
 
 // ---- CAMERA/LIGHTING -------
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-scene.add(ambientLight);
+//const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+//scene.add(ambientLight);
 
 const sunlight = new THREE.DirectionalLight();
 sunlight.intensity = 1;
-sunlight.position.set(50, 50, 50);
+sunlight.position.set(10, 10, 10);
 sunlight.castShadow = true;
 scene.add(sunlight);
 
@@ -102,8 +85,8 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 20, 0);
-camera.position.set(50, 20, 0);
+controls.target.set(0, 30, 0);
+camera.position.set(60, 5, 0);
 
 
 // ---- POST-PROCESSING -------
@@ -113,13 +96,13 @@ const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
-const bloomPass = new UnrealBloomPass(
+/*const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
   0.2,
   0,
   0.2
 );
-composer.addPass(bloomPass);
+composer.addPass(bloomPass);*/
 
 const outputPass = new OutputPass();
 composer.addPass(outputPass);
@@ -229,6 +212,7 @@ function animate() {
   // Rendu principal
   composer.render();
 }
+animate();
 
 // Evénement de redimensionnement pour ajuster la caméra et le rendu
 window.addEventListener("resize", () => {
@@ -237,7 +221,7 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-animate();
+
 
 // Configuration WebSocket
 let webSocketConnected = false;
@@ -258,11 +242,9 @@ oscSocket.on("ready", function (msg) {
 // Track whether the encoder is moving
 
 
-let hue = 0; // Cible vers laquelle on
+let randomHue = Math.random();
 
-let saturation = 0;
-let light = 0;
-
+let hue = randomHue; // Cible vers laquelle on
 let lerpSpeed = 0; // Plus lent si la différence est importante
 
 function lerp(a, b, t) {
@@ -272,15 +254,13 @@ function lerp(a, b, t) {
 let growth = 0;
 let targetGrowth = 0;
 
-let lastArgumentSat = 0;
-let lastArgumentLight = 0;
-let lastArgumentEncoder = 0;
-let lastArgumentOne = 0;
-let lastArgumentTwo = 0;
-let lastArgumentThree = 0;
-let lastArgumentGrow = 0;
-let lastArgumentReset = 0;
-let lastArgumentBloom = 0;
+let lastArgumentSat;
+let lastArgumentLight;
+let lastArgumentOne;
+let lastArgumentTwo;
+let lastArgumentThree;
+let lastArgumentA;
+let lastArgumentC ;
 
 
 
@@ -308,14 +288,13 @@ function grow() {
   isGrowing = true; // Marquer que grow est en cours
   isDying = false;
   targetGrowth = 1;
-  lerpSpeed += 0.00001;
+  lerpSpeed += 0.005;
   updateTreeSmooth();
 
   console.log("growing");
 
   setTimeout(function () {
     isDying = true;
-    isGrowing = false;
     die();
   }, 60000);
 };
@@ -324,7 +303,7 @@ function die() {
   setInterval(function () {
     if (isDying) {
       lerpSpeed = 0;
-      growth -= 0.0001;
+      growth -= 0.001;
       targetGrowth = 0;
       updateTreeSmooth();
       console.log("dying");
@@ -347,102 +326,124 @@ oscSocket.on("message", function (msg) {
   if (address.startsWith("/sliderOne" + iteration)) {
 
     let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
 
     treeParams.leaves.sizeVariance = roundedValue / 3;
     // On suppose que la valeur du slider est entre 0 et 1
     treeParams.sun.strength = roundedValue / 30;
 
-    if (roundedValue - lastArgumentOne >= 0.1 || roundedValue - lastArgumentOne <= -0.1) {
+    if (roundedValue - lastArgumentOne >= 0.2 || roundedValue - lastArgumentOne <= -0.2) {
       targetGrowth = 1;
-      lastArgumentOne = roundedValue;
 
-      grow();
+      if (isGrowing == false) {
+        grow();
+      }
+
     }
+    lastArgumentOne = roundedValue;
   }
   if (address.startsWith("/sliderTwo" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
-    treeParams.branch.lengthVariance = roundedValue / 8.23;
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
+    treeParams.branch.lengthVariance = roundedValue / 14;
     treeParams.geometry.lengthVariance = roundedValue / 5;
 
-    if (roundedValue - lastArgumentTwo >= 0.1 || roundedValue - lastArgumentTwo <= -0.1) {
+    if (roundedValue - lastArgumentTwo >= 0.2 || roundedValue - lastArgumentTwo <= -0.2) {
       targetGrowth = 1;
-      lastArgumentTwo = roundedValue;
+      console.log(roundedValue);
 
-      grow();
+      if (isGrowing == false) {
+        console.log("growing");
+        grow();
+      }
     }
+    lastArgumentTwo = roundedValue;
+
   }
   if (address.startsWith("/sliderThree" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
     treeParams.trunk.flare = roundedValue;
-    treeParams.branch.twist = roundedValue;
+    treeParams.branch.twist = roundedValue / 3;
     treeParams.branch.taper = 0.5 + roundedValue / 6;
 
-    if (roundedValue - lastArgumentThree >= 0.1 || roundedValue - lastArgumentThree <= -0.1) {
+    if (roundedValue - lastArgumentThree >= 0.2 || roundedValue - lastArgumentThree <= -0.2) {
       targetGrowth = 1;
-      lastArgumentThree = roundedValue;
 
-      grow();
+      if (isGrowing == false) {
+        grow();
+      }
     }
+    lastArgumentThree = roundedValue;
+
   }
 
   if (address.startsWith("/sliderA" + iteration)) {
 
     let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
 
     treeParams.leaves.sizeVariance = roundedValue / 3;
-    treeParams.branch.lengthVariance = roundedValue / 8.23;
+    treeParams.branch.lengthVariance = roundedValue / 10;
+
+    if (roundedValue - lastArgumentA >= 0.2 || roundedValue - lastArgumentA <= -0.2) {
+      targetGrowth = 1;
+      if (isGrowing == false) {
+        grow();
+      }
+    }
+    lastArgumentA = roundedValue;
 
   }
   if (address.startsWith("/sliderB" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
     let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
-    let invertedValue = 1 - (roundedValue / 5);
 
-    // Mettre à jour le paramètre emissive en fonction de la valeur inversée
-    treeParams.leaves.emissive = invertedValue / 2;
-
-    if (roundedValue < 1.5) {
-      targetGrowth = 1;
-      lastArgumentTwo = roundedValue;
-
-      grow();
-    }
+    treeParams.leaves.emissive = roundedValue / -3 + 1;
+    treeParams.leaves.size = roundedValue / -2 + 3;
   }
   if (address.startsWith("/sliderC" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
     treeParams.trunk.flare = roundedValue;
+    treeParams.sun.strength = roundedValue / 50;
 
-    treeParams.geometry.lengthVariance = roundedValue / 5;
+    if (roundedValue - lastArgumentC >= 0.2 || roundedValue - lastArgumentC <= -0.2) {
+      targetGrowth = 1;
+
+      if (isGrowing == false) {
+        grow();
+      }
+    }
+    lastArgumentC = roundedValue;
 
   }
 
   if (address.startsWith("/sliderSat" + iteration)) {
 
     let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
 
     treeParams.leaves.sizeVariance = roundedValue * 2;
-    treeParams.branch.lengthVariance = roundedValue / 3;
+    treeParams.branch.lengthVariance = roundedValue / 5;
     treeParams.branch.taper = 0.5 + roundedValue / 6;
 
     // Check if the value has changed (encoder is moving)
-    if (roundedValue - lastArgumentSat >= 0.1 || roundedValue - lastArgumentSat <= -0.1) {
+    if (roundedValue - lastArgumentSat >= 0.2 || roundedValue - lastArgumentSat <= -0.2) {
       targetGrowth = 1;
-      lastArgumentSat = roundedValue;
 
-      grow();
+      if (isGrowing == false) {
+        grow();
+      }
     }
+    lastArgumentSat = roundedValue;
+
   }
 
   if (address.startsWith("/sliderLight" + iteration)) {
 
     let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
+    let roundedValue = parseFloat(firstArgumentValue.toFixed(1));
 
 
     treeParams.branch.twist = roundedValue / 10;
@@ -450,69 +451,33 @@ oscSocket.on("message", function (msg) {
     treeParams.geometry.lengthVariance = roundedValue / 10;
 
     // Check if the value has changed (encoder is moving)
-    if (roundedValue - lastArgumentLight >= 0.1 || roundedValue - lastArgumentLight <= -0.1) {
+    if (roundedValue - lastArgumentLight >= 0.2 || roundedValue - lastArgumentLight <= -0.2) {
       targetGrowth = 1;
-      lastArgumentLight = roundedValue;
 
-      grow();
+      if (isGrowing == false) {
+        grow();
+      }
     }
+    lastArgumentLight = roundedValue;
+
   }
   if (address.startsWith("/encoder" + iteration)) {
     let firstArgumentValue = msg.args[0].value;
 
-    // Check if the value has changed (encoder is moving)
-    if (firstArgumentValue != lastArgumentEncoder) {
-      targetGrowth = 1;
+    if (firstArgumentValue === 1) {
+      treeParams.geometry.randomization += 0.1;
+      treeParams.trunk.length += 0.1;
+      treeParams.branch.gnarliness += 0.01;
+    } else if (firstArgumentValue == -1) {
+      treeParams.geometry.randomization -= 0.1;
+      treeParams.trunk.length -= 0.1;
+      treeParams.branch.gnarliness -= 0.01;
+    }
+
+    if (isGrowing == false) {
       grow();
-
-
-      if (firstArgumentValue === 1) {
-        treeParams.geometry.randomization += 0.1;
-        treeParams.trunk.length += 0.1;
-        treeParams.branch.gnarliness += 0.01;
-      } else if (roundedValue === -1) {
-        treeParams.geometry.randomization -= 0.1;
-        treeParams.trunk.length -= 0.1;
-        treeParams.branch.gnarliness -= 0.01;
-      }
-
-      lastArgumentEncoder = firstArgumentValue;
     }
 
-  }
-
-  /*
-    if (address.startsWith("/sliderGrow")) {
-      let roundedValue = msg.args[0].value;
-      lerpSpeed = roundedValue / 1000;
-
-      if (roundedValue > 0.5) {
-        targetGrowth = 1;
-      }
-
-      updateTreeSmooth();
-    }
-  */
-  if (address.startsWith("/sliderBloom" + iteration)) {
-    let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
-    treeParams.branch.twist = roundedValue;
-
-  }
-
-  if (address.startsWith("/bouton")) {
-    let firstArgumentValue = msg.args[0].value;
-    let roundedValue = parseFloat(firstArgumentValue.toFixed(2));
-    if (roundedValue == 1) {
-
-      growth = 0;
-      let random = Math.random();
-      let randomSeed = random * 50000;
-      treeParams.seed = randomSeed;
-      console.log(targetGrowth);
-      // Call function to update the tree
-
-    }
   }
 
   let newColor = new THREE.Color();
