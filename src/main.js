@@ -169,7 +169,7 @@ const treeParams = {
     type: 1,
     minCount: 5,
     maxCount: 7,
-    size: 2,
+    size: 3,
     sizeVariance: 0,
     color: new THREE.Color().setHSL("", "", ""),
     emissive: 0.02,
@@ -303,7 +303,7 @@ function die() {
   setInterval(function () {
     if (isDying) {
       lerpSpeed = 0;
-      growth -= 0.001;
+      growth -= 0.005;
       targetGrowth = 0;
       updateTreeSmooth();
       console.log("dying");
@@ -315,7 +315,7 @@ function die() {
         window.location.reload();
       }
     }
-  }, 100); // 50 millisecondes = 0.05 secondes
+  }, 20); // 50 millisecondes = 0.05 secondes
 
 }
 
